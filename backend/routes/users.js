@@ -215,6 +215,12 @@ router.delete('/account', authenticateToken, async (req, res) => {
 
     const userId = req.user.userId;
 
+    // Proteger la cuenta de administrador: nunca se puede eliminar, ni escribiendo ELIMINAR
+    const check = await client.query('SELECT email FROM users WHERE id = $1', [userId]);
+    if (check.rows.length > 0 && check.rows[0].email === config.adminEmail) {
+      return res.status(403).json({ error: 'La cuenta de administrador no se puede eliminar.' });
+    }
+
     await client.query('BEGIN');
     // Borrar primero los registros que referencian al usuario (claves foráneas)
     await client.query('DELETE FROM email_log WHERE user_id = $1', [userId]);

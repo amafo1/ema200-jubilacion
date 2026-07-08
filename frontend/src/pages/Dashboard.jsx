@@ -111,7 +111,15 @@ export default function Dashboard() {
     navigate('/');
   };
   
+  // La cuenta de administrador nunca se puede eliminar
+  const ADMIN_EMAIL = 'amafo.ws@gmail.com';
+  const isAdmin = profile?.email === ADMIN_EMAIL;
+  
   const handleDeleteAccount = async () => {
+    if (isAdmin) {
+      setDeleteError('La cuenta de administrador no se puede eliminar.');
+      return;
+    }
     setDeleting(true);
     setDeleteError('');
     try {
@@ -147,9 +155,13 @@ export default function Dashboard() {
           </div>
           <button
             onClick={handleLogout}
-            className="text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
+            aria-label="Cerrar sesión"
+            className="flex items-center gap-1.5 text-gray-500 active:text-gray-700 text-sm font-medium border border-gray-200 rounded-full px-3 py-2 min-h-[40px]"
           >
-            Cerrar sesión
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="hidden sm:inline">Salir</span>
           </button>
         </div>
       </div>
@@ -369,15 +381,17 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Eliminar cuenta — discreto */}
-            <div className="pt-2">
-              <button
-                onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(''); setDeleteError(''); }}
-                className="text-gray-400 hover:text-red-600 text-sm underline transition-colors"
-              >
-                Eliminar cuenta
-              </button>
-            </div>
+            {/* Eliminar cuenta — discreto (oculto para el administrador) */}
+            {!isAdmin && (
+              <div className="pt-2 flex justify-center">
+                <button
+                  onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(''); setDeleteError(''); }}
+                  className="text-gray-400 active:text-red-600 text-sm underline underline-offset-2 py-2 px-3 min-h-[40px]"
+                >
+                  Eliminar cuenta
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -393,25 +407,27 @@ export default function Dashboard() {
             </p>
             <input
               type="text"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoComplete="off"
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="Escribe ELIMINAR"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition mb-2"
-              autoFocus
+              className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition mb-2"
             />
             {deleteError && <p className="text-red-500 text-sm mb-2">{deleteError}</p>}
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleting}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition"
+                className="w-full sm:w-auto px-4 py-3 min-h-[48px] text-gray-600 active:text-gray-800 font-medium border border-gray-200 rounded-lg transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleteConfirmText !== 'ELIMINAR' || deleting}
-                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2 px-5 rounded-lg transition"
+                disabled={deleteConfirmText !== 'ELIMINAR' || deleting || isAdmin}
+                className="w-full sm:w-auto px-5 py-3 min-h-[48px] bg-red-600 active:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-lg transition"
               >
                 {deleting ? 'Eliminando...' : 'Eliminar mi cuenta'}
               </button>
