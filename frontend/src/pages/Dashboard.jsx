@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { userAPI, fundAPI } from '../services/api';
+import { userAPI, fundAPI, adminAPI } from '../services/api';
 
 // Años hasta la jubilación (a los 67) con precisión completa, replicando el backend
 // para que las estimaciones coincidan al céntimo con la simulación del servidor.
@@ -59,6 +59,11 @@ export default function Dashboard() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  // Administración
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [rejectingUser, setRejectingUser] = useState(null);
+  const [rejectReason, setRejectReason] = useState({});
   
   useEffect(() => {
     loadDashboardData();
@@ -132,6 +137,46 @@ export default function Dashboard() {
     }
   };
   
+  // --- Administración (solo para el admin) ---
+  const loadPendingUsers = async () => {
+    setAdminLoading(true);
+    try {
+      const res = await adminAPI.getPendingUsers();
+      setPendingUsers(res.data);
+    } catch (error) {
+      console.error('Error cargando usuarios pendientes:', error);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+  
+  const handleApproveUser = async (userId) => {
+    try {
+      await adminAPI.approveUser(userId);
+      setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch (error) {
+      console.error('Error aprobando usuario:', error);
+    }
+  };
+  
+  const handleRejectUser = async (userId) => {
+    try {
+      await adminAPI.rejectUser(userId, rejectReason[userId] || '');
+      setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+      setRejectingUser(null);
+      setRejectReason({});
+    } catch (error) {
+      console.error('Error rechazando usuario:', error);
+    }
+  };
+  
+  // Cargar usuarios pendientes cuando el admin abre la pestaña de administración
+  useEffect(() => {
+    if (activeTab === 'admin' && profile?.email === 'amafo.ws@gmail.com') {
+      loadPendingUsers();
+    }
+  }, [activeTab, profile]);
+  
   // Formatea "1978-01-30T00:00:00.000Z" -> "30/01/1978"
   const formatBirthDate = (value) => {
     if (!value) return '—';
@@ -169,7 +214,7 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
-          {['overview', 'funds', 'history', 'settings'].map((tab) => (
+          {['overview', 'funds', 'history', ...(isAdmin ? ['admin'] : []), 'settings'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -182,6 +227,7 @@ export default function Dashboard() {
               {tab === 'overview' && '📊 Resumen'}
               {tab === 'funds' && '💰 Mis fondos'}
               {tab === 'history' && '📈 Historial EMA'}
+              {tab === 'admin' && `👥 Administración${pendingUsers.length ? ` (${pendingUsers.length})` : ''}`}
               {tab === 'settings' && '⚙️ Configuración'}
             </button>
           ))}
@@ -405,6 +451,96 @@ export default function Dashboard() {
               </table>
               </div>
             </div>
+          </div>
+        )}
+        
+        {/* Admin Tab */}
+        {activeTab === 'admin' && isAdmin && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-navy">Usuarios pendientes de aprobación</h3>
+              <button
+                onClick={loadPendingUsers}
+                className="text-sm text-blue-600 active:text-blue-800 font-medium border border-blue-200 rounded-lg px-3 py-2 min-h-[40px]"
+              >
+                ↻ Actualizar
+              </button>
+            </div>
+            
+            {adminLoading ? (
+              <div className="bg-white p-8 rounded-lg shadow-md text-center text-gray-600">Cargando...</div>
+            ) : pendingUsers.length === 0 ? (
+              <div className="bg-white p-8 rounded-lg shadow-md text-center">
+                <p className="text-gray-600">No hay usuarios pendientes de aprobación.</p>
+              </div>
+            ) : (
+              pendingUsers.map((user) => (
+                <div key={user.id} className="bg-white p-5 rounded-lg shadow-md border border-gray-100">
+                  <div className="mb-4">
+                    <h4 className="text-lg font-bold text-navy">{user.name || 'Sin nombre'}</h4>
+                    <p className="text-gray-600 text-sm break-all">{user.email}</p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Registrado: {new Date(user.created_at).toLocaleDateString('es-ES')}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-xs text-gray-500">Fecha de nacimiento</p>
+                      <p className="font-semibold text-sm">{formatBirthDate(user.birth_date)}</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-xs text-gray-500">Aportación mensual</p>
+                      <p className="font-semibold text-sm">€{user.monthly_contribution}</p>
+                    </div>
+                  </div>
+                  
+                  {rejectingUser === user.id && (
+                    <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Razón del rechazo (opcional)</label>
+                      <textarea
+                        value={rejectReason[user.id] || ''}
+                        onChange={(e) => setRejectReason({ ...rejectReason, [user.id]: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                        rows="3"
+                        placeholder="Explica el motivo del rechazo..."
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => handleApproveUser(user.id)}
+                      className="flex-1 bg-green-600 active:bg-green-700 text-white font-bold py-3 px-4 rounded-lg min-h-[48px]"
+                    >
+                      ✓ Aprobar
+                    </button>
+                    {rejectingUser === user.id ? (
+                      <>
+                        <button
+                          onClick={() => handleRejectUser(user.id)}
+                          className="flex-1 bg-red-600 active:bg-red-700 text-white font-bold py-3 px-4 rounded-lg min-h-[48px]"
+                        >
+                          Confirmar rechazo
+                        </button>
+                        <button
+                          onClick={() => { setRejectingUser(null); setRejectReason({}); }}
+                          className="flex-1 bg-gray-200 active:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg min-h-[48px]"
+                        >
+                          Cancelar
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setRejectingUser(user.id)}
+                        className="flex-1 border border-red-300 text-red-600 active:bg-red-50 font-bold py-3 px-4 rounded-lg min-h-[48px]"
+                      >
+                        ✗ Rechazar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
         

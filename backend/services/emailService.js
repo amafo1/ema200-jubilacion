@@ -93,6 +93,23 @@ const emailTemplates = {
       <p>Recibirás un email cuando sea aprobada y entonces comenzarás a recibir las alertas automáticas.</p>
       <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — EMA200 Strategy</p>
     `
+  },
+  
+  admin_new_registration: {
+    subject: 'Nuevo registro pendiente de aprobación',
+    html: (data) => `
+      <h2>Nuevo usuario pendiente de aprobación</h2>
+      <p>Se acaba de registrar un nuevo usuario en la plataforma y está esperando tu aprobación:</p>
+      <table style="border-collapse: collapse; margin: 16px 0;">
+        <tr><td style="padding: 6px 12px; color: #666;">Nombre</td><td style="padding: 6px 12px; font-weight: bold;">${data.name || '—'}</td></tr>
+        <tr><td style="padding: 6px 12px; color: #666;">Email</td><td style="padding: 6px 12px; font-weight: bold;">${data.email}</td></tr>
+        <tr><td style="padding: 6px 12px; color: #666;">Fecha de nacimiento</td><td style="padding: 6px 12px; font-weight: bold;">${data.birthDate || '—'}</td></tr>
+        <tr><td style="padding: 6px 12px; color: #666;">Aportación mensual</td><td style="padding: 6px 12px; font-weight: bold;">${data.monthlyContribution ? data.monthlyContribution + ' €' : '—'}</td></tr>
+      </table>
+      <p>Entra en el <strong>Panel de administración</strong> (pestaña "Administración" en tu cuenta) para aprobarlo o rechazarlo.</p>
+      ${data.adminUrl ? `<p><a href="${data.adminUrl}" style="display: inline-block; background: #001f3f; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">Ir al panel de administración</a></p>` : ''}
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — EMA200 Strategy</p>
+    `
   }
 };
 

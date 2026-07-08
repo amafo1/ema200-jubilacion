@@ -59,6 +59,23 @@ router.post('/register', async (req, res) => {
       console.error('⚠️  No se pudo enviar el email de registro (el usuario se creó igualmente):', emailError.response?.data || emailError.message);
     }
     
+    // Notificar al administrador del nuevo registro pendiente (no bloqueante)
+    try {
+      await sendEmail({
+        to: config.adminEmail,
+        template: 'admin_new_registration',
+        data: {
+          name: name || 'Inversor',
+          email,
+          birthDate,
+          monthlyContribution,
+          adminUrl: `${config.frontendUrl}/admin`
+        }
+      });
+    } catch (adminEmailError) {
+      console.error('⚠️  No se pudo notificar al administrador del nuevo registro:', adminEmailError.response?.data || adminEmailError.message);
+    }
+    
     res.status(201).json({
       message: 'Usuario registrado. Pendiente de activación por administrador.',
       user
