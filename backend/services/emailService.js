@@ -99,12 +99,12 @@ const emailTemplates = {
 /**
  * Enviar email a través de Brevo
  */
-async function sendEmail({ to, subject, template, data }) {
+async function sendEmail({ to, subject, template, data, html }) {
   try {
     let finalSubject = subject;
-    let htmlContent = '';
+    let htmlContent = html || '';
     
-    // Si es una plantilla, obtenerla
+    // Si es una plantilla, obtenerla (tiene prioridad sobre html directo)
     if (template && emailTemplates[template]) {
       const tmpl = emailTemplates[template];
       finalSubject = typeof tmpl.subject === 'function' ? tmpl.subject(data) : tmpl.subject;
