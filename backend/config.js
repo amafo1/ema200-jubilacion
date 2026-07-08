@@ -51,5 +51,7 @@ module.exports = {
   dividendYield: 0.035, // 3.5% anual
   
   // Email
-  emailFrom: 'noreply@app-jubilacion.com',
+  // IMPORTANTE: el remitente debe estar verificado en Brevo (Senders & IP).
+  // Se puede sobrescribir con la variable de entorno EMAIL_FROM.
+  emailFrom: process.env.EMAIL_FROM || 'amafo.ws@gmail.com',
 };
