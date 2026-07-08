@@ -304,27 +304,75 @@ export default function Dashboard() {
         
         {/* Funds Tab */}
         {activeTab === 'funds' && (
-          <div className="space-y-4">
-            {funds.map((fund) => (
-              <div key={fund.isin} className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="text-sm text-gray-600">{fund.role}</p>
-                    <h3 className="text-xl font-bold text-navy">{fund.name}</h3>
-                    <p className="text-gray-600 text-sm mt-1">{fund.description}</p>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded flex items-center justify-between">
-                  <code className="text-lg font-mono font-bold text-navy">{fund.isin}</code>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(fund.isin)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold text-sm"
-                  >
-                    Copiar ISIN
-                  </button>
-                </div>
+          <div className="space-y-6">
+            {/* CTA de afiliado MyInvestor */}
+            <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-navy mb-2">¿Aún no tienes cuenta en MyInvestor?</h3>
+              <p className="text-gray-700 text-sm mb-4">
+                Necesitas una cuenta para invertir en los fondos de tu plan. Es <strong>gratuita, sin comisiones de custodia</strong>,
+                y además <strong>tú y quien te lo recomienda recibís 25 euros cada uno</strong> simplemente invirtiendo 100 euros en fondos
+                en los primeros 3 meses.
+              </p>
+              
+              <div className="bg-white/70 rounded-lg p-4 mb-4">
+                <p className="text-sm font-semibold text-gray-800 mb-2">Condiciones para recibir los 25 €:</p>
+                <ul className="space-y-1 text-sm text-gray-700 ml-4">
+                  <li>✓ Tener 1.000 euros en cuenta, O</li>
+                  <li>✓ Contratar un depósito, O</li>
+                  <li>✓ Invertir 100 euros en fondos, carteras, planes o acciones/ETF</li>
+                  <li>✓ Mantener durante 3 meses desde apertura</li>
+                </ul>
               </div>
-            ))}
+              
+              <a
+                href="https://newapp.myinvestor.es/do/signup?promotionalCode=D52OP"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block w-full sm:w-auto bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold py-3 px-6 rounded-lg text-center transition shadow-md"
+              >
+                Abrir cuenta en MyInvestor →
+              </a>
+              <p className="text-xs text-gray-600 mt-3">
+                El enlace se abre con la promoción aplicada automáticamente.
+              </p>
+            </div>
+            
+            {/* Lista de fondos */}
+            <div>
+              <h3 className="text-xl font-bold text-navy mb-3">Tus fondos de inversión</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Copia el ISIN del fondo que necesites → pégalo en el <strong>buscador de fondos</strong> de la app de MyInvestor
+                → localízalo y haz la acción que corresponda según el contexto:
+              </p>
+              <ul className="text-sm text-gray-600 mb-6 ml-4 space-y-1">
+                <li>• <strong>Fondo de espera</strong>: transfiere aquí tu dinero cuando el S&amp;P 500 esté por encima de la EMA200.</li>
+                <li>• <strong>Fondo de crecimiento</strong>: compra cuando recibas una señal de compra (S&amp;P 500 cruza a la baja la EMA200).</li>
+                <li>• <strong>Fondo de dividendos</strong>: rota el 20% anual durante los últimos 5 años antes de tu jubilación.</li>
+              </ul>
+              
+              <div className="space-y-4">
+                {funds.map((fund) => (
+                  <div key={fund.isin} className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="text-sm text-gray-500 uppercase tracking-wide">{fund.role}</p>
+                        <h4 className="text-lg font-bold text-navy">{fund.name}</h4>
+                        <p className="text-gray-600 text-sm mt-1">{fund.description}</p>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                      <code className="text-base font-mono font-bold text-navy">{fund.isin}</code>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(fund.isin)}
+                        className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm min-h-[40px]"
+                      >
+                        Copiar ISIN
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
         
