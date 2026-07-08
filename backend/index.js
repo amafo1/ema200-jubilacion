@@ -53,22 +53,27 @@ app.get('/health', (req, res) => {
 app.get('/test-brevo-ip', async (req, res) => {
   try {
     const { sendEmail } = require('./services/emailService');
-    await sendEmail(
-      config.adminEmail,
-      'Prueba de IP autorizada en Brevo',
-      `<h1>✅ Funciona!</h1><p>Este correo se envió desde Railway el ${new Date().toLocaleString('es-ES', { timeZone: config.timezone })}.</p><p>La IP de Railway está correctamente autorizada en Brevo.</p>`
-    );
+    
+    const result = await sendEmail({
+      to: config.adminEmail,
+      subject: 'Prueba de IP autorizada en Brevo',
+      html: `<h1>✅ Funciona!</h1><p>Este correo se envió desde Railway el ${new Date().toLocaleString('es-ES', { timeZone: config.timezone })}.</p><p>La IP de Railway está correctamente autorizada en Brevo.</p>`
+    });
+    
     res.json({ 
       success: true, 
       message: 'Correo de prueba enviado correctamente',
+      brevoResponse: result,
       timestamp: new Date() 
     });
   } catch (error) {
-    console.error('Error enviando correo de prueba:', error);
+    console.error('❌ Error completo:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message,
-      details: error.response?.body || 'Sin detalles adicionales'
+      brevoError: error.response?.data || null,
+      statusCode: error.response?.status || null,
+      headers: error.response?.headers || null
     });
   }
 });
