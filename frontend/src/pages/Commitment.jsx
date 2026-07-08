@@ -77,3 +77,5 @@ export default function Commitment() {
     </div>
   );
 }
+
+/* deploy: disclaimer + orden mensajes - 1783516914 */
