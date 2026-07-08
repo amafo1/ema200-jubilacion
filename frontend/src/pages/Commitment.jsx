@@ -78,4 +78,3 @@ export default function Commitment() {
   );
 }
 
-/* deploy: disclaimer + orden mensajes - 1783516914 */
