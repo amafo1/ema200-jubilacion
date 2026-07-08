@@ -103,8 +103,8 @@ export default function Onboarding() {
       newErrors.monthlyContribution = 'Aportación mensual válida requerida';
     }
     
-    if (!formData.pin || formData.pin.length !== 4) {
-      newErrors.pin = 'PIN debe ser de 4 dígitos';
+    if (!formData.pin || !/^[a-zA-Z0-9]{4}$/.test(formData.pin)) {
+      newErrors.pin = 'El PIN debe ser de 4 caracteres alfanuméricos (letras o números)';
     }
     
     if (formData.pin !== formData.pinConfirm) {
@@ -273,13 +273,13 @@ export default function Onboarding() {
           
           {/* PIN */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">PIN de 4 dígitos *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">PIN de 4 caracteres (letras o números) *</label>
             <input
               type="password"
               name="pin"
               value={formData.pin}
               onChange={handleChange}
-              placeholder="0000"
+              placeholder="Ej: A1B2"
               maxLength="4"
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
                 errors.pin ? 'border-red-500' : 'border-gray-300'
@@ -297,7 +297,7 @@ export default function Onboarding() {
               name="pinConfirm"
               value={formData.pinConfirm}
               onChange={handleChange}
-              placeholder="0000"
+              placeholder="Ej: A1B2"
               maxLength="4"
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
                 errors.pinConfirm ? 'border-red-500' : 'border-gray-300'

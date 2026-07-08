@@ -31,8 +31,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
     
-    if (pin.length !== 4 || isNaN(pin)) {
-      return res.status(400).json({ error: 'El PIN debe ser de 4 dígitos' });
+    if (!/^[a-zA-Z0-9]{4}$/.test(pin)) {
+      return res.status(400).json({ error: 'El PIN debe ser de 4 caracteres alfanuméricos (letras o números)' });
     }
     
     // Hashear PIN
@@ -165,8 +165,13 @@ router.post('/forgot-pin', async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
     
-    // Generar nuevo PIN aleatorio
-    const newPin = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    // Generar nuevo PIN alfanumérico aleatorio de 4 caracteres
+    // Se excluyen caracteres ambiguos (0/O, 1/I/l) para facilitar la lectura.
+    const pinChars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    let newPin = '';
+    for (let i = 0; i < 4; i++) {
+      newPin += pinChars.charAt(Math.floor(Math.random() * pinChars.length));
+    }
     const pinHash = await bcryptjs.hash(newPin, 10);
     
     // Actualizar PIN en base de datos

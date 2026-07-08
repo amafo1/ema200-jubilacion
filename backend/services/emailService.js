@@ -150,7 +150,7 @@ async function sendPINRecovery(email, newPin) {
     subject: 'Recuperación de PIN - Tu jubilación automática',
     html: `
       <h2>Recuperación de PIN</h2>
-      <p>Tu nuevo PIN de 4 dígitos es: <strong>${newPin}</strong></p>
+      <p>Tu nuevo PIN de 4 caracteres es: <strong>${newPin}</strong></p>
       <p>Utilízalo para acceder a tu cuenta.</p>
       <p style="background-color: #fff3cd; padding: 10px; border-radius: 5px; color: #856404;">
         Por seguridad, no compartas este PIN con nadie.

@@ -127,12 +127,12 @@ export default function Login() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">PIN de 4 dígitos</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">PIN de 4 caracteres (letras o números)</label>
             <input
               type="password"
               value={pin}
               onChange={(e) => setPin(e.target.value.slice(0, 4))}
-              placeholder="0000"
+              placeholder="Ej: A1B2"
               maxLength="4"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
               required
