@@ -1,5 +1,15 @@
 import { create } from 'zustand';
 
+// Recuperar los datos de registro guardados (persisten aunque se recargue la página)
+function loadRegistrationData() {
+  try {
+    const raw = localStorage.getItem('registrationData');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem('token') || null,
@@ -12,9 +22,17 @@ export const useAuthStore = create((set) => ({
   },
   logout: () => {
     localStorage.removeItem('token');
-    set({ user: null, token: null, isLoggedIn: false });
+    localStorage.removeItem('registrationData');
+    set({ user: null, token: null, isLoggedIn: false, registrationData: null });
   },
   
-  setRegistrationData: (data) => set({ registrationData: data }),
-  registrationData: null,
+  setRegistrationData: (data) => {
+    try {
+      localStorage.setItem('registrationData', JSON.stringify(data));
+    } catch {
+      // Ignorar si el navegador no permite almacenamiento
+    }
+    set({ registrationData: data });
+  },
+  registrationData: loadRegistrationData(),
 }));

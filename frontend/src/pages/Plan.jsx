@@ -130,6 +130,13 @@ export default function Plan() {
           </div>
         </div>
         
+        {/* Aviso si falta la fecha de nacimiento */}
+        {!registrationData?.birthDate && (
+          <div className="mb-8 bg-amber-50 border-l-4 border-amber-500 p-4 text-sm text-amber-800 rounded">
+            No hemos encontrado tu fecha de nacimiento, así que la estimación usa un horizonte por defecto de 30 años. Vuelve al <a href="/onboarding" className="underline font-semibold">registro</a> para obtener un cálculo ajustado a tu edad.
+          </div>
+        )}
+        
         {/* Selección de escenarios */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <ScenarioCard type="conservative" title="Conservador" description="7% retorno anual (bajo riesgo)" />
@@ -140,7 +147,10 @@ export default function Plan() {
         {/* Resultados del simulador */}
         {!loading && active.patrimonioEstimado && (
           <div className="bg-white p-8 rounded-lg shadow-md mb-8">
-            <h2 className="text-2xl font-bold text-navy mb-6">Escenario {scenarioTitles[activeScenario]}</h2>
+            <h2 className="text-2xl font-bold text-navy mb-2">Escenario {scenarioTitles[activeScenario]}</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Cálculo basado en <strong>{active.yearsUntilRetirement} años</strong> hasta tu jubilación (a los {RETIREMENT_AGE} años){registrationData?.birthDate ? `, en ${new Date(registrationData.birthDate).getFullYear() + RETIREMENT_AGE}` : ''}.
+            </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="bg-blue-50 p-6 rounded-lg">
@@ -165,7 +175,7 @@ export default function Plan() {
             </div>
             
             <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 text-sm text-gray-700">
-              <strong>Disclaimer:</strong> Estimación orientativa basada en datos históricos. La rentabilidad pasada no garantiza la futura. No constituye asesoramiento financiero.
+              <strong>Disclaimer:</strong> Estimación orientativa basada en datos históricos y en tu fecha de jubilación (a los {RETIREMENT_AGE} años), asumiendo aportaciones mensuales constantes de €{monthlyContribution.toFixed(2)} hasta entonces. La rentabilidad pasada no garantiza la futura. No constituye asesoramiento financiero.
             </div>
           </div>
         )}
