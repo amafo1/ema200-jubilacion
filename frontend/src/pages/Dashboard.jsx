@@ -346,8 +346,8 @@ export default function Dashboard() {
               </p>
               <ul className="text-sm text-gray-600 mb-6 ml-4 space-y-1">
                 <li>• <strong>Fondo de espera</strong>: añade aquí tu dinero, todas las veces que quieras, mientras el S&amp;P 500 esté por encima de la EMA200.</li>
-                <li>• <strong>Fondo de crecimiento</strong>: compra cuando recibas una señal de compra (S&amp;P 500 cruza a la baja la EMA200).</li>
-                <li>• <strong>Fondo de dividendos</strong>: rota el 20% anual durante los últimos 5 años antes de tu jubilación.</li>
+                <li>• <strong>Fondo de crecimiento</strong>: transfiere tu dinero desde el fondo de espera cuando recibas una señal de compra (S&amp;P 500 cruza a la baja la EMA200).</li>
+                <li>• <strong>Fondo de dividendos</strong>: rota el 20% anual durante los últimos 5 años antes de tu jubilación desde el fondo de crecimiento cuando recibas cada aviso.</li>
               </ul>
               
               <div className="space-y-4">
