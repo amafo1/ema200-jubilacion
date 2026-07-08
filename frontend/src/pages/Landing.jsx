@@ -32,6 +32,17 @@ export default function Landing() {
           Quiero empezar
         </button>
         
+        {/* Enlace a login */}
+        <p className="text-gray-300 text-base mt-6">
+          ¿Ya tienes cuenta?{' '}
+          <button
+            onClick={() => navigate('/login')}
+            className="text-blue-400 hover:text-blue-300 font-semibold underline transition-colors"
+          >
+            Inicia sesión
+          </button>
+        </p>
+        
         {/* Pie de página */}
         <p className="text-gray-400 text-sm absolute bottom-8 left-0 right-0 px-4">
           Diseñada para inversores residentes en España
