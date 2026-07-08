@@ -1,0 +1,60 @@
+# Blueprint de Render para la app EMA200 Jubilación.
+# Al aplicar este blueprint, Render crea automáticamente:
+#   1. Una base de datos PostgreSQL
+#   2. El backend (Node/Express) conectado a esa base de datos
+#   3. El frontend (React/Vite) como sitio estático
+#
+# No hay que configurar nada manualmente: las variables de entorno
+# (incluida la conexión a la base de datos) se enlazan solas.
+
+databases:
+  - name: ema200-db
+    databaseName: ema200_jubilacion
+    user: ema200
+    plan: free
+
+services:
+  # ---------- Backend (API) ----------
+  - type: web
+    name: ema200-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ema200-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://ema200-frontend.onrender.com
+      # Estas claves se introducen en el panel de Render (no se suben a GitHub).
+      - key: TWELVE_DATA_API_KEY
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+
+  # ---------- Frontend (sitio estático) ----------
+  - type: web
+    name: ema200-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ema200-backend.onrender.com/api
+    routes:
+      # Necesario para que el enrutado del SPA (React Router) funcione al
+      # recargar o acceder directamente a rutas internas.
+      - type: rewrite
+        source: /*
+        destination: /index.html
