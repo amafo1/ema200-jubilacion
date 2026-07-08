@@ -66,15 +66,29 @@ async function dailyEMA200Check() {
     
     console.log(`📊 Precio SPY: $${currentPrice} | EMA200: $${ema200.toFixed(2)}`);
     
-    // Guardar en historial
+    const isBelow = currentPrice <= ema200;
+    const signal = isBelow ? 'buy' : null;
+    
+    // FALLO 1 arreglado: solo se avisa en el CRUCE a la baja, no todos los días
+    // que el precio siga por debajo. Miramos el último estado ANTES de insertar
+    // el de hoy para detectar la transición (arriba -> abajo).
+    const prev = await pool.query(
+      'SELECT signal FROM ema200_history ORDER BY date DESC, id DESC LIMIT 1'
+    );
+    const prevBelow = prev.rows.length > 0 && prev.rows[0].signal === 'buy';
+    
+    // Guardar en historial (esto "rearma" la alerta: cuando el precio vuelve a
+    // subir por encima, prevBelow pasa a false y un nuevo cruce volverá a avisar).
     await pool.query(
       'INSERT INTO ema200_history (date, price, ema200, signal) VALUES ($1, $2, $3, $4)',
-      [new Date().toISOString().split('T')[0], currentPrice, ema200, currentPrice <= ema200 ? 'buy' : null]
+      [new Date().toISOString().split('T')[0], currentPrice, ema200, signal]
     );
     
-    // Si hay señal de compra
-    if (currentPrice <= ema200) {
-      console.log('🎯 ¡SEÑAL DE COMPRA DETECTADA!');
+    // Cruce fresco a la baja: estaba por encima y ahora ha tocado/cruzado.
+    const freshCross = isBelow && !prevBelow;
+    
+    if (freshCross) {
+      console.log('🎯 ¡SEÑAL DE COMPRA DETECTADA (nuevo cruce)!');
       
       // Obtener todos los usuarios aprobados
       const users = await pool.query(
@@ -84,16 +98,20 @@ async function dailyEMA200Check() {
       
       // Enviar email a cada usuario
       for (const user of users.rows) {
-        await sendEmail({
-          to: user.email,
-          subject: '¡Es el momento! El S&P 500 ha tocado la EMA200',
-          template: 'buy_signal',
-          data: {
-            name: user.name || 'Inversor',
-            currentPrice,
-            ema200: ema200.toFixed(2)
-          }
-        });
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: '¡Es el momento! El S&P 500 ha tocado la EMA200',
+            template: 'buy_signal',
+            data: {
+              name: user.name || 'Inversor',
+              currentPrice,
+              ema200: ema200.toFixed(2)
+            }
+          });
+        } catch (emailErr) {
+          console.error(`No se pudo enviar señal de compra a ${user.email}:`, emailErr.message);
+        }
         
         // Registrar envío
         await pool.query(
@@ -101,6 +119,14 @@ async function dailyEMA200Check() {
           [user.id, 'buy_signal', 'Señal de compra EMA200']
         );
       }
+    } else if (isBelow) {
+      console.log('ℹ️  Precio sigue por debajo de la EMA200 (ya avisado, no se reenvía).');
+    }
+    
+    // Si el mercado se ha recuperado (por encima de la EMA200), intentar completar
+    // los tramos de rotación que quedaron en pausa por un crash anterior.
+    if (!isBelow) {
+      await resumePausedRotations();
     }
     
   } catch (error) {
@@ -160,28 +186,27 @@ async function checkRotationAnniversary() {
       const birthDate = new Date(user.birth_date);
       const yearsUntilRetirement = calculateYearsUntilRetirement(birthDate);
       
-      // Si quedan 5 años o menos, iniciar rotación
+      // Si quedan 5 años o menos, procesar el tramo de rotación de este año
       if (yearsUntilRetirement <= 5 && yearsUntilRetirement > 0) {
         const rotationYear = 6 - Math.ceil(yearsUntilRetirement);
         
-        // Verificar si ya existe registro
+        // Verificar si ya existe registro para este tramo
         const existing = await pool.query(
           'SELECT * FROM rotation_history WHERE user_id = $1 AND rotation_year = $2',
           [user.id, rotationYear]
         );
         
         if (existing.rows.length === 0) {
-          console.log(`👤 Usuario ${user.email}: Iniciando rotación año ${rotationYear}`);
-          
-          // Crear registro de rotación
-          await pool.query(
-            'INSERT INTO rotation_history (user_id, rotation_year, status) VALUES ($1, $2, $3)',
-            [user.id, rotationYear, 'pending']
-          );
-          
-          // Enviar email de rotación (si no está en crash)
-          await checkAndSendRotationEmail(user, rotationYear);
+          // Tramo nuevo: procesarlo por primera vez
+          console.log(`👤 Usuario ${user.email}: Procesando rotación tramo ${rotationYear}`);
+          await processRotationTranche(user, rotationYear, null);
+        } else if (existing.rows[0].status === 'paused') {
+          // FALLO 2 arreglado: el tramo quedó pausado por un crash anterior.
+          // Reintentamos: si el mercado ya se recuperó, se completará ahora.
+          console.log(`👤 Usuario ${user.email}: Reintentando tramo pausado ${rotationYear}`);
+          await processRotationTranche(user, rotationYear, existing.rows[0].id);
         }
+        // Si el tramo ya está 'completed', no se hace nada.
       }
     }
     
@@ -191,47 +216,129 @@ async function checkRotationAnniversary() {
 }
 
 /**
- * Enviar email de rotación considerando estado del mercado
+ * Procesa un tramo de rotación según el estado del mercado.
+ * - Mercado sano (precio > EMA200): completa el tramo y avisa (rotation_active).
+ * - Mercado en crash (precio <= EMA200): pausa el tramo y avisa (rotation_pause),
+ *   dejándolo en estado 'paused' para completarlo cuando el mercado se recupere.
+ *
+ * @param {object} user
+ * @param {number} rotationYear  Tramo 1..5
+ * @param {number|null} existingId  id del registro si ya existía (tramo en pausa), o null si es nuevo
  */
-async function checkAndSendRotationEmail(user, rotationYear) {
+async function processRotationTranche(user, rotationYear, existingId) {
   try {
-    // Obtener último precio del EMA200
+    // Estado de mercado más reciente
     const latestEMA = await pool.query(
-      'SELECT * FROM ema200_history ORDER BY date DESC LIMIT 1'
+      'SELECT * FROM ema200_history ORDER BY date DESC, id DESC LIMIT 1'
     );
     
-    if (latestEMA.rows.length === 0) return;
+    // Sin datos de mercado todavía: crear el tramo como pendiente y esperar
+    // a que haya una lectura de EMA200 (no perdemos el tramo).
+    if (latestEMA.rows.length === 0) {
+      if (existingId === null) {
+        await pool.query(
+          'INSERT INTO rotation_history (user_id, rotation_year, status, percentage) VALUES ($1, $2, $3, $4)',
+          [user.id, rotationYear, 'paused', 20 * rotationYear]
+        );
+      }
+      console.log('Sin datos de EMA200 aún; tramo queda en pausa a la espera.');
+      return;
+    }
     
     const { price, ema200 } = latestEMA.rows[0];
-    const isCrash = price <= ema200;
+    const isCrash = parseFloat(price) <= parseFloat(ema200);
     
     if (isCrash) {
-      // Mercado en crash: pausa la rotación
-      await sendEmail({
-        to: user.email,
-        subject: 'Mercado inestable — Pausamos tu rotación este año',
-        template: 'rotation_pause',
-        data: {
-          name: user.name || 'Inversor',
-          rotationYear
+      // Mercado en crash: pausar el tramo. Solo avisamos la primera vez
+      // (si ya estaba en pausa, no reenviamos el email de pausa).
+      if (existingId === null) {
+        await pool.query(
+          'INSERT INTO rotation_history (user_id, rotation_year, status, percentage) VALUES ($1, $2, $3, $4)',
+          [user.id, rotationYear, 'paused', 20 * rotationYear]
+        );
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: 'Mercado inestable — Pausamos tu rotación este año',
+            template: 'rotation_pause',
+            data: { name: user.name || 'Inversor', rotationYear }
+          });
+        } catch (emailErr) {
+          console.error(`No se pudo enviar email de pausa a ${user.email}:`, emailErr.message);
         }
-      });
+        await pool.query(
+          'INSERT INTO email_log (user_id, email_type, subject) VALUES ($1, $2, $3)',
+          [user.id, `rotation_pause_${rotationYear}`, 'Rotación en pausa']
+        );
+      } else {
+        console.log(`Tramo ${rotationYear} sigue en pausa (mercado aún por debajo de la EMA200).`);
+      }
     } else {
-      // Mercado normal: procede con rotación
-      await sendEmail({
-        to: user.email,
-        subject: `Es momento de proteger lo que has construido — Tramo ${rotationYear} de 5`,
-        template: 'rotation_active',
-        data: {
-          name: user.name || 'Inversor',
-          rotationYear,
-          percentage: 20 * rotationYear
-        }
-      });
+      // Mercado sano: completar el tramo (nuevo o reactivado desde pausa).
+      if (existingId === null) {
+        await pool.query(
+          'INSERT INTO rotation_history (user_id, rotation_year, status, percentage, completed_at) VALUES ($1, $2, $3, $4, NOW())',
+          [user.id, rotationYear, 'completed', 20 * rotationYear]
+        );
+      } else {
+        await pool.query(
+          'UPDATE rotation_history SET status = $1, completed_at = NOW() WHERE id = $2',
+          ['completed', existingId]
+        );
+      }
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: `Es momento de proteger lo que has construido — Tramo ${rotationYear} de 5`,
+          template: 'rotation_active',
+          data: {
+            name: user.name || 'Inversor',
+            rotationYear,
+            percentage: 20 * rotationYear
+          }
+        });
+      } catch (emailErr) {
+        console.error(`No se pudo enviar email de rotación a ${user.email}:`, emailErr.message);
+      }
+      await pool.query(
+        'INSERT INTO email_log (user_id, email_type, subject) VALUES ($1, $2, $3)',
+        [user.id, `rotation_active_${rotationYear}`, `Rotación tramo ${rotationYear}`]
+      );
+      console.log(`✅ Tramo ${rotationYear} completado para ${user.email}.`);
     }
     
   } catch (error) {
-    console.error('Error en checkAndSendRotationEmail:', error.message);
+    console.error('Error en processRotationTranche:', error.message);
+  }
+}
+
+/**
+ * Reactiva los tramos de rotación que quedaron en pausa por un crash, cuando el
+ * mercado se recupera (precio > EMA200). Se llama desde el chequeo diario de EMA200.
+ * Así el tramo no se pierde: se completa en cuanto el mercado vuelve a estar sano,
+ * sin esperar al siguiente aniversario.
+ */
+async function resumePausedRotations() {
+  try {
+    const paused = await pool.query(
+      `SELECT rh.id, rh.rotation_year, u.email, u.name
+       FROM rotation_history rh
+       JOIN users u ON u.id = rh.user_id
+       WHERE rh.status = 'paused' AND u.status = 'approved'`
+    );
+    
+    if (paused.rows.length === 0) return;
+    
+    console.log(`🔄 Recuperando ${paused.rows.length} tramo(s) de rotación en pausa...`);
+    for (const row of paused.rows) {
+      // Recuperamos el usuario completo (necesitamos user.id para los logs).
+      const u = await pool.query('SELECT * FROM users WHERE email = $1', [row.email]);
+      if (u.rows.length === 0) continue;
+      await processRotationTranche(u.rows[0], row.rotation_year, row.id);
+    }
+    
+  } catch (error) {
+    console.error('Error en resumePausedRotations:', error.message);
   }
 }
 
@@ -265,5 +372,11 @@ function calculateYearsUntilRetirement(birthDate) {
 
 module.exports = {
   initializeCronJobs,
-  calculateYearsUntilRetirement
+  calculateYearsUntilRetirement,
+  // Exportados para pruebas unitarias (no usar en producción):
+  dailyEMA200Check,
+  checkRotationAnniversary,
+  processRotationTranche,
+  resumePausedRotations,
+  _setPool: (p) => { pool = p; }
 };
