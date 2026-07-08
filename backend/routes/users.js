@@ -200,4 +200,42 @@ router.get('/alerts', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/users/account
+ * Eliminar permanentemente la cuenta del usuario y todos sus datos relacionados.
+ * Requiere confirmación explícita: body { confirm: "ELIMINAR" }
+ */
+router.delete('/account', authenticateToken, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { confirm } = req.body;
+    if (confirm !== 'ELIMINAR') {
+      return res.status(400).json({ error: 'Debes escribir ELIMINAR para confirmar el borrado de la cuenta.' });
+    }
+
+    const userId = req.user.userId;
+
+    await client.query('BEGIN');
+    // Borrar primero los registros que referencian al usuario (claves foráneas)
+    await client.query('DELETE FROM email_log WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM rotation_history WHERE user_id = $1', [userId]);
+    const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING email', [userId]);
+    await client.query('COMMIT');
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    console.log(`🗑️  Cuenta eliminada: ${result.rows[0].email}`);
+    res.json({ message: 'Cuenta eliminada correctamente' });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al eliminar cuenta:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

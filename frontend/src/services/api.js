@@ -28,6 +28,7 @@ export const userAPI = {
   updateProfile: (data) => api.put('/users/profile', data),
   getSimulation: (params) => api.get('/users/simulation', { params }),
   getAlerts: () => api.get('/users/alerts'),
+  deleteAccount: (confirm) => api.delete('/users/account', { data: { confirm } }),
 };
 
 // Fondos

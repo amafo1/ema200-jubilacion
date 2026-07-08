@@ -55,6 +55,10 @@ export default function Dashboard() {
   const [monthlyInput, setMonthlyInput] = useState(null); // valor de la barra
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   
   useEffect(() => {
     loadDashboardData();
@@ -107,6 +111,27 @@ export default function Dashboard() {
     navigate('/');
   };
   
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await userAPI.deleteAccount('ELIMINAR');
+      logout();
+      navigate('/');
+    } catch (err) {
+      setDeleteError(err.response?.data?.error || 'No se pudo eliminar la cuenta. Inténtalo de nuevo.');
+      setDeleting(false);
+    }
+  };
+  
+  // Formatea "1978-01-30T00:00:00.000Z" -> "30/01/1978"
+  const formatBirthDate = (value) => {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (isNaN(d)) return String(value).split('T')[0];
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+  
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Cargando dashboard...</div>;
   }
@@ -122,7 +147,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg"
+            className="text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
           >
             Cerrar sesión
           </button>
@@ -339,23 +364,61 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de nacimiento</label>
-                  <p className="text-gray-800 font-semibold">{profile?.birth_date}</p>
+                  <p className="text-gray-800 font-semibold">{formatBirthDate(profile?.birth_date)}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
-              <h3 className="font-bold text-red-900 mb-2">Zona de peligro</h3>
+            {/* Eliminar cuenta — discreto */}
+            <div className="pt-2">
               <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg"
+                onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(''); setDeleteError(''); }}
+                className="text-gray-400 hover:text-red-600 text-sm underline transition-colors"
               >
-                Cerrar sesión
+                Eliminar cuenta
               </button>
             </div>
           </div>
         )}
       </div>
+      
+      {/* Modal de confirmación para eliminar cuenta */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-red-700 mb-2">Eliminar cuenta</h3>
+            <p className="text-gray-700 text-sm mb-4">
+              Esta acción es <strong>permanente e irreversible</strong>. Se borrarán todos tus datos y dejarás de recibir
+              las alertas automáticas. Para confirmar, escribe <strong>ELIMINAR</strong> en el campo de abajo.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Escribe ELIMINAR"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition mb-2"
+              autoFocus
+            />
+            {deleteError && <p className="text-red-500 text-sm mb-2">{deleteError}</p>}
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'ELIMINAR' || deleting}
+                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2 px-5 rounded-lg transition"
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar mi cuenta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
