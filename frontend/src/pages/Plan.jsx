@@ -73,17 +73,23 @@ export default function Plan() {
   const loading = false;
   const active = scenarios[activeScenario] || {};
   
+  const scenarioTitles = {
+    conservative: 'Conservador',
+    historic: 'Histórico',
+    optimistic: 'Optimista'
+  };
+  
   const ScenarioCard = ({ type, title, description }) => (
     <div
       onClick={() => setActiveScenario(type)}
-      className={`cursor-pointer p-6 rounded-lg border-2 transition ${
+      className={`cursor-pointer p-6 rounded-lg border-2 transition min-h-[120px] flex flex-col justify-center ${
         activeScenario === type
           ? 'border-blue-500 bg-blue-50'
           : 'border-gray-200 bg-white hover:border-blue-300'
       }`}
     >
       <h3 className="font-bold text-lg mb-2">{title}</h3>
-      <p className="text-sm text-gray-600">{description}</p>
+      <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
     </div>
   );
   
@@ -134,7 +140,7 @@ export default function Plan() {
         {/* Resultados del simulador */}
         {!loading && active.patrimonioEstimado && (
           <div className="bg-white p-8 rounded-lg shadow-md mb-8">
-            <h2 className="text-2xl font-bold text-navy mb-6">Escenario {activeScenario}</h2>
+            <h2 className="text-2xl font-bold text-navy mb-6">Escenario {scenarioTitles[activeScenario]}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="bg-blue-50 p-6 rounded-lg">
