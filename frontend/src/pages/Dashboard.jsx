@@ -3,6 +3,46 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { userAPI, fundAPI } from '../services/api';
 
+// Años hasta la jubilación (a los 67) con precisión completa, replicando el backend
+// para que las estimaciones coincidan al céntimo con la simulación del servidor.
+function preciseYearsUntilRetirement(birthDateStr) {
+  if (!birthDateStr) return 0;
+  const birthDate = new Date(birthDateStr);
+  const today = new Date();
+  const retirementDate = new Date(birthDate.getFullYear() + 67, birthDate.getMonth(), birthDate.getDate());
+  return Math.max(0, (retirementDate - today) / (1000 * 60 * 60 * 24 * 365.25));
+}
+
+// Simulación local — replica exactamente el cálculo del backend (escenario histórico)
+// para que la barra actualice las estimaciones de forma instantánea, sin llamadas al servidor.
+function simulateRetirement(monthlyAmount, years) {
+  const annualReturn = 0.10;   // rentabilidad media histórica del S&P 500
+  const dividendYield = 0.035; // 3,5% de dividendos anuales sobre el patrimonio final
+  const monthlyReturn = Math.pow(1 + annualReturn, 1 / 12) - 1;
+  const months = Math.floor(years * 12);
+
+  let patrimonio = 0;
+  for (let i = 0; i < months; i++) {
+    patrimonio = patrimonio * (1 + monthlyReturn) + monthlyAmount;
+  }
+
+  // Dividendos anuales brutos
+  const dividendosAnuales = patrimonio * dividendYield;
+
+  // Retención fiscal española sobre dividendos (tramos)
+  let retension = 0;
+  if (dividendosAnuales <= 6000) {
+    retension = dividendosAnuales * 0.19;
+  } else if (dividendosAnuales <= 50000) {
+    retension = 6000 * 0.19 + (dividendosAnuales - 6000) * 0.21;
+  } else {
+    retension = 6000 * 0.19 + 44000 * 0.21 + (dividendosAnuales - 50000) * 0.23;
+  }
+
+  const dividendosMensualNeto = (dividendosAnuales - retension) / 12;
+  return { patrimonioEstimado: patrimonio, dividendosMensualNeto };
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -12,10 +52,35 @@ export default function Dashboard() {
   const [emaHistory, setEmaHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [monthlyInput, setMonthlyInput] = useState(null); // valor de la barra
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
   
   useEffect(() => {
     loadDashboardData();
   }, []);
+  
+  // Inicializar la barra con la aportación registrada del usuario
+  useEffect(() => {
+    if (profile && monthlyInput === null) {
+      setMonthlyInput(Math.round(Number(profile.monthly_contribution)));
+    }
+  }, [profile]);
+  
+  const handleSaveContribution = async () => {
+    setSaving(true);
+    setSaveMsg('');
+    try {
+      const res = await userAPI.updateProfile({ monthlyContribution: monthlyInput });
+      setProfile((prev) => ({ ...prev, monthly_contribution: res.data.monthly_contribution }));
+      setSaveMsg('✓ Aportación guardada');
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch (err) {
+      setSaveMsg('No se pudo guardar. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
+    }
+  };
   
   const loadDashboardData = async () => {
     try {
@@ -86,13 +151,19 @@ export default function Dashboard() {
         </div>
         
         {/* Overview Tab */}
-        {activeTab === 'overview' && (
+        {activeTab === 'overview' && (() => {
+          const years = preciseYearsUntilRetirement(profile?.birth_date) || (profile?.yearsUntilRetirement ?? 0);
+          const liveMonthly = monthlyInput ?? Math.round(Number(profile?.monthly_contribution)) ?? 0;
+          const liveSim = simulateRetirement(liveMonthly, years);
+          const savedMonthly = Math.round(Number(profile?.monthly_contribution));
+          const isChanged = liveMonthly !== savedMonthly;
+          return (
           <div className="space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <p className="text-gray-600 text-sm">Aportación mensual</p>
-                <p className="text-3xl font-bold text-navy">€{profile?.monthly_contribution?.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</p>
+                <p className="text-3xl font-bold text-navy">€{liveMonthly.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</p>
               </div>
               
               <div className="bg-white p-6 rounded-lg shadow-md">
@@ -102,13 +173,84 @@ export default function Dashboard() {
               
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <p className="text-gray-600 text-sm">Patrimonio estimado</p>
-                <p className="text-3xl font-bold text-green-600">€{simulation?.patrimonioEstimado?.toLocaleString('es-ES', { maximumFractionDigits: 0 })}</p>
+                <p className="text-3xl font-bold text-green-600">€{liveSim.patrimonioEstimado.toLocaleString('es-ES', { maximumFractionDigits: 0 })}</p>
               </div>
               
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <p className="text-gray-600 text-sm">Renta mensual neta</p>
-                <p className="text-3xl font-bold text-purple-600">€{simulation?.dividendosMensualNeto?.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-purple-600">€{liveSim.dividendosMensualNeto.toFixed(2)}</p>
               </div>
+            </div>
+            
+            {/* Personalización con barra deslizante */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+                <h3 className="font-bold text-navy">Personaliza tu aportación mensual</h3>
+                <span className="text-2xl font-bold text-blue-600">€{liveMonthly.toLocaleString('es-ES')}</span>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                Mueve la barra para ver cómo cambian tu patrimonio y tu renta estimada. Los años hasta la jubilación no se
+                pueden modificar aquí: quedan fijados en el registro porque determinan tus avisos automáticos.
+              </p>
+              <input
+                type="range"
+                min="50"
+                max="3000"
+                step="50"
+                value={liveMonthly}
+                onChange={(e) => setMonthlyInput(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>€50</span>
+                <span>€3.000</span>
+              </div>
+              <div className="flex items-center gap-3 mt-4 flex-wrap">
+                <button
+                  onClick={handleSaveContribution}
+                  disabled={!isChanged || saving}
+                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2 px-5 rounded-lg transition"
+                >
+                  {saving ? 'Guardando...' : 'Guardar aportación'}
+                </button>
+                {isChanged && !saving && (
+                  <button
+                    onClick={() => setMonthlyInput(savedMonthly)}
+                    className="text-gray-500 hover:text-gray-700 text-sm underline"
+                  >
+                    Restablecer (€{savedMonthly.toLocaleString('es-ES')})
+                  </button>
+                )}
+                {saveMsg && <span className="text-sm font-semibold text-green-600">{saveMsg}</span>}
+              </div>
+            </div>
+            
+            {/* Leyenda: cómo se calcula la renta mensual neta */}
+            <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-lg">
+              <h3 className="font-bold text-gray-800 mb-3">¿Cómo calculamos tu renta mensual neta?</h3>
+              <ol className="space-y-2 text-gray-700 text-sm list-decimal list-inside">
+                <li>
+                  Invertimos tu <strong>aportación mensual (€{liveMonthly.toLocaleString('es-ES')})</strong> durante los{' '}
+                  <strong>{years.toFixed(1)} años</strong> que faltan hasta tu jubilación (a los 67).
+                </li>
+                <li>
+                  Aplicamos una <strong>rentabilidad media anual del 10%</strong> (histórica del S&amp;P 500) con interés
+                  compuesto → <strong>patrimonio estimado (€{liveSim.patrimonioEstimado.toLocaleString('es-ES', { maximumFractionDigits: 0 })})</strong>.
+                </li>
+                <li>
+                  Al jubilarte, ese patrimonio genera <strong>dividendos anuales del 3,5%</strong> sin necesidad de vender.
+                </li>
+                <li>
+                  Restamos la <strong>retención fiscal española</strong> sobre dividendos: 19% hasta 6.000€, 21% entre
+                  6.000€ y 50.000€, y 23% a partir de 50.000€.
+                </li>
+                <li>
+                  El resultado neto dividido entre 12 = tu <strong>renta mensual neta (€{liveSim.dividendosMensualNeto.toFixed(2)})</strong>.
+                </li>
+              </ol>
+              <p className="text-gray-500 text-xs mt-3">
+                Es una estimación basada en datos históricos; la rentabilidad real puede variar y no está garantizada.
+              </p>
             </div>
             
             {/* Info Box */}
@@ -120,7 +262,8 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-        )}
+          );
+        })()}
         
         {/* Funds Tab */}
         {activeTab === 'funds' && (
