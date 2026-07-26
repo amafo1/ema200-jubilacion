@@ -143,9 +143,9 @@ export default function Plan() {
         
         {/* Selección de escenarios */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <ScenarioCard type="conservative" title="Conservador" description="7% retorno anual (bajo riesgo)" />
-          <ScenarioCard type="historic" title="Histórico" description="10% retorno anual (recomendado)" />
-          <ScenarioCard type="optimistic" title="Optimista" description="13% retorno anual (alto riesgo)" />
+          <ScenarioCard type="conservative" title="Conservador" description="6% retorno anual (bajo riesgo)" />
+          <ScenarioCard type="historic" title="Histórico" description="8.5% retorno anual (recomendado)" />
+          <ScenarioCard type="optimistic" title="Optimista" description="11% retorno anual (alto riesgo)" />
         </div>
         
         {/* Resultados del simulador */}
