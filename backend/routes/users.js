@@ -100,14 +100,14 @@ router.get('/simulation', authenticateToken, async (req, res) => {
     const yearsUntilRetirement = Math.max(0, (retirementDate - today) / (1000 * 60 * 60 * 24 * 365.25));
     
     // Definir retornos anuales según escenario
-    // Basados en histórico del MSCI ACWI (índice mundial desarrollados + emergentes):
-    // - Conservador: 6% (por debajo del promedio histórico a largo plazo)
-    // - Histórico: 8.5% (promedio a 20 años del ACWI)
-    // - Optimista: 11% (promedio a 5 años del ACWI)
+    // Basados en histórico del S&P 500:
+    // - Conservador: 7% (por debajo del promedio histórico)
+    // - Histórico: 10% (promedio a largo plazo del S&P 500)
+    // - Optimista: 13% (escenario alcista)
     const returns = {
-      conservative: 0.06,
-      historic: 0.085,
-      optimistic: 0.11
+      conservative: 0.07,
+      historic: 0.10,
+      optimistic: 0.13
     };
     
     const annualReturn = returns[scenario] || returns.historic;

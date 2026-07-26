@@ -22,7 +22,7 @@ router.get('/list', authenticateToken, (req, res) => {
       role: 'crecimiento',
       name: config.funds.crecimiento.name,
       isin: config.funds.crecimiento.isin,
-      description: 'Fondo indexado mundial (desarrollados + emergentes, con EE. UU. como mayor peso). Recibe el 30% de cada aportación, siempre invertido para no perder la subida continua del mercado. Cuando llega una señal de compra, se le suma el capital acumulado en el Monetario.',
+      description: 'Fondo indexado al S&P 500 (las 500 mayores empresas de EE. UU.). Recibe el 30% de cada aportación, siempre invertido para no perder la subida continua del mercado. Cuando llega una señal de compra (S&P 500 cruza la EMA200), se le suma el capital acumulado en el Monetario.',
       position: 2
     },
     {

@@ -112,7 +112,7 @@ export default function Plan() {
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600">
             <p className="font-semibold text-navy mb-1">Cómo repartes cada aportación</p>
-            <p>Un <strong>70%</strong> va al <strong>Fondo Monetario</strong> (tu reserva para aprovechar las caídas) y un <strong>30%</strong> siempre al <strong>MyInvestor Mundo Desarrollado y Emergente</strong> (renta variable mundial, para no perder la subida continua del mercado). Cuando el S&amp;P 500 toca su EMA200, mueves el Monetario al fondo de crecimiento.</p>
+            <p>Un <strong>70%</strong> va al <strong>Fondo Monetario</strong> (tu reserva para aprovechar las caídas) y un <strong>30%</strong> siempre al <strong>S&amp;P 500</strong> (renta variable, para no perder la subida continua del mercado). Cuando el S&amp;P 500 toca su EMA200, mueves el Monetario al S&amp;P 500.</p>
           </div>
         </div>
         
@@ -143,9 +143,9 @@ export default function Plan() {
         
         {/* Selección de escenarios */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <ScenarioCard type="conservative" title="Conservador" description="6% retorno anual (bajo riesgo)" />
-          <ScenarioCard type="historic" title="Histórico" description="8.5% retorno anual (recomendado)" />
-          <ScenarioCard type="optimistic" title="Optimista" description="11% retorno anual (alto riesgo)" />
+          <ScenarioCard type="conservative" title="Conservador" description="7% retorno anual (bajo riesgo)" />
+          <ScenarioCard type="historic" title="Histórico" description="10% retorno anual (recomendado)" />
+          <ScenarioCard type="optimistic" title="Optimista" description="13% retorno anual (alto riesgo)" />
         </div>
         
         {/* Resultados del simulador */}

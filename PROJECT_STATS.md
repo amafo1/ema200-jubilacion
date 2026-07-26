@@ -126,7 +126,7 @@
 
 ```
 Monetario (Espera)     → FR0000447823
-Mundo Des. y Emerg.(Crec.) → ES0184894006
+S&P 500 (Crecimiento)  → IE00BYX5MX67
 Dividendos (Jubilación)→ ES0165185010
 ```
 

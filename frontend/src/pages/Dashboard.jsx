@@ -16,7 +16,7 @@ function preciseYearsUntilRetirement(birthDateStr) {
 // Simulación local — replica exactamente el cálculo del backend (escenario histórico)
 // para que la barra actualice las estimaciones de forma instantánea, sin llamadas al servidor.
 function simulateRetirement(monthlyAmount, years) {
-  const annualReturn = 0.085;  // rentabilidad media histórica a 20 años del MSCI ACWI (índice mundial)
+  const annualReturn = 0.10;   // rentabilidad media histórica del S&P 500
   const dividendYield = 0.035; // 3,5% de dividendos anuales sobre el patrimonio final
   const monthlyReturn = Math.pow(1 + annualReturn, 1 / 12) - 1;
   const months = Math.floor(years * 12);
@@ -317,7 +317,7 @@ export default function Dashboard() {
                   <strong>{years.toFixed(1)} años</strong> que faltan hasta tu jubilación (a los 67).
                 </li>
                 <li>
-                  Aplicamos una <strong>rentabilidad media anual del 8.5%</strong> (histórica a 20 años del MSCI ACWI, índice mundial de renta variable) con interés
+                  Aplicamos una <strong>rentabilidad media anual del 10%</strong> (histórica del S&amp;P 500) con interés
                   compuesto → <strong>patrimonio estimado (€{liveSim.patrimonioEstimado.toLocaleString('es-ES', { maximumFractionDigits: 0 })})</strong>.
                 </li>
                 <li>
@@ -392,11 +392,11 @@ export default function Dashboard() {
               </p>
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-4 text-sm text-gray-700">
                 <p className="font-semibold text-navy mb-1">Cómo repartir cada aportación (70 / 30)</p>
-                <p>Cada vez que separes dinero para invertir: <strong>70% al Fondo Monetario</strong> (pólvora para las caídas) y <strong>30% al fondo de crecimiento mundial</strong> (siempre invertido, para no perder la subida continua del mercado).</p>
+                <p>Cada vez que separes dinero para invertir: <strong>70% al Fondo Monetario</strong> (pólvora para las caídas) y <strong>30% al S&amp;P 500</strong> (siempre invertido, para no perder la subida continua del mercado).</p>
               </div>
               <ul className="text-sm text-gray-600 mb-6 ml-4 space-y-1">
                 <li>• <strong>Fondo de espera (Monetario)</strong>: recibe el 70% de cada aportación mientras el S&amp;P 500 esté por encima de la EMA200. Es tu reserva para aprovechar las caídas.</li>
-                <li>• <strong>Fondo de crecimiento (Mundo Desarrollado y Emergente)</strong>: recibe el 30% de cada aportación siempre. Además, cuando recibas una señal de compra (S&amp;P 500 cruza a la baja la EMA200), transfiere aquí lo acumulado en el Monetario.</li>
+                <li>• <strong>Fondo de crecimiento (S&amp;P 500)</strong>: recibe el 30% de cada aportación siempre. Además, cuando recibas una señal de compra (S&amp;P 500 cruza a la baja la EMA200), transfiere aquí lo acumulado en el Monetario.</li>
                 <li>• <strong>Fondo de dividendos</strong>: rota el 20% anual durante los últimos 5 años antes de tu jubilación desde el fondo de crecimiento cuando recibas cada aviso.</li>
               </ul>
               
