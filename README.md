@@ -136,7 +136,7 @@ Las siguientes credenciales están almacenadas en `backend/config.js`:
 | Rol | Nombre | ISIN |
 |-----|--------|------|
 | Espera | Fondo Monetario | FR0000447823 |
-| Crecimiento | S&P 500 | IE00BYX5MX67 |
+| Crecimiento | MyInvestor Mundo Desarrollado y Emergente | ES0184894006 |
 | Jubilación | Fondo Dividendos | ES0165185010 |
 
 ## Variables de Entorno

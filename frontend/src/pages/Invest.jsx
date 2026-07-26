@@ -14,8 +14,8 @@ export default function Invest() {
   };
   
   const funds = [
-    { role: 'Espera', name: 'Fondo Monetario', isin: 'FR0000447823' },
-    { role: 'Crecimiento', name: 'S&P 500', isin: 'IE00BYX5MX67' },
+    { role: 'Espera (70% de cada aportación)', name: 'Fondo Monetario', isin: 'FR0000447823' },
+    { role: 'Crecimiento (30% de cada aportación)', name: 'MyInvestor Mundo Desarrollado y Emergente', isin: 'ES0184894006' },
     { role: 'Jubilación', name: 'Fondo Dividendos', isin: 'ES0165185010' }
   ];
   
@@ -41,6 +41,18 @@ export default function Invest() {
         
         {/* Fondos */}
         <h2 className="text-2xl font-bold text-navy mb-4">Tus fondos de inversión</h2>
+        
+        {/* Explicación reparto 70/30 */}
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6 text-sm text-gray-700">
+          <p className="font-semibold text-navy mb-2">Cómo repartir cada aportación</p>
+          <p className="mb-1">Cada vez que separes dinero para invertir, divídelo así:</p>
+          <ul className="ml-4 space-y-1">
+            <li>• <strong>70% al Fondo Monetario</strong> — tu "pólvora seca" reservada para aprovechar las caídas importantes del mercado.</li>
+            <li>• <strong>30% al Mundo Desarrollado y Emergente</strong> — siempre invertido en renta variable, para no perderte la subida continua del mercado.</li>
+          </ul>
+          <p className="mt-2">Cuando recibas una <strong>señal de compra</strong> (el S&amp;P 500 cruza por debajo de su EMA200), moverás lo acumulado en el Monetario al fondo de crecimiento.</p>
+        </div>
+        
         <div className="space-y-4 mb-8">
           {funds.map((fund) => (
             <div key={fund.isin} className="bg-white p-6 rounded-lg shadow-md">

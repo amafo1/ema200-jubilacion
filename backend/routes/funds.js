@@ -15,21 +15,21 @@ router.get('/list', authenticateToken, (req, res) => {
       role: 'espera',
       name: config.funds.espera.name,
       isin: config.funds.espera.isin,
-      description: 'Fondo de bajo riesgo para acumular capital en espera',
+      description: 'Fondo monetario de bajo riesgo. Recibe el 70% de cada aportación como "pólvora seca" para aprovechar las caídas importantes del mercado.',
       position: 1
     },
     {
       role: 'crecimiento',
       name: config.funds.crecimiento.name,
       isin: config.funds.crecimiento.isin,
-      description: 'Fondo de crecimiento para aprovechar oportunidades',
+      description: 'Fondo indexado mundial (desarrollados + emergentes, con EE. UU. como mayor peso). Recibe el 30% de cada aportación, siempre invertido para no perder la subida continua del mercado. Cuando llega una señal de compra, se le suma el capital acumulado en el Monetario.',
       position: 2
     },
     {
       role: 'jubilacion',
       name: config.funds.jubilacion.name,
       isin: config.funds.jubilacion.isin,
-      description: 'Fondo de dividendos para generar renta en jubilación',
+      description: 'Fondo de dividendos para generar renta en jubilación. En los últimos 5 años se rota el 20% anual desde el fondo de crecimiento.',
       position: 3
     }
   ];

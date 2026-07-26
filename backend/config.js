@@ -42,9 +42,14 @@ module.exports = {
   // Fondos ISIN
   funds: {
     espera: { name: 'Fondo Monetario', isin: 'FR0000447823' },
-    crecimiento: { name: 'S&P 500', isin: 'IE00BYX5MX67' },
+    crecimiento: { name: 'MyInvestor Mundo Desarrollado y Emergente', isin: 'ES0184894006' },
     jubilacion: { name: 'Fondo Dividendos', isin: 'ES0165185010' }
   },
+  
+  // Reparto de cada aportación en fase de acumulación (mercado por encima de la EMA200):
+  // 70% al Monetario (pólvora seca para aprovechar caídas) + 30% al fondo de crecimiento
+  // (renta variable siempre invertida para no perder la subida continua del mercado).
+  contributionSplit: { espera: 0.70, crecimiento: 0.30 },
   
   // Edades y jubilación
   retirementAge: 67,

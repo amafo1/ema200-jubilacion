@@ -13,6 +13,13 @@ const emailTemplates = {
       <h2>¡Hola ${data.name}!</h2>
       <p>Es el <strong>primer día del mes</strong> y es el momento perfecto para hacer tu aportación mensual de <strong>€${data.monthlyContribution}</strong>.</p>
       <p>Recuerda: <strong>la consistencia es la clave</strong>. Cada euro que aportes hoy será exponencialmente más grande en tu jubilación.</p>
+      
+      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
+        <strong>Cómo repartir tu aportación:</strong><br>
+        • <strong>70%</strong> al <strong>Fondo Monetario</strong> (${config.funds.espera.isin}) — tu "pólvora seca" reservada para aprovechar las caídas importantes.<br>
+        • <strong>30%</strong> al <strong>${config.funds.crecimiento.name}</strong> (${config.funds.crecimiento.isin}) — siempre invertido en renta variable, para no perderte la subida continua del mercado.
+      </p>
+      
       <p>Los mercados caen, dan miedo y generan dudas. Precisamente en esos momentos es cuando esta estrategia actúa. Mientras otros se asustan, tú sigues invirtiendo.</p>
       <p><a href="https://www.myinvestor.es" style="background-color: #003366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Aporta ahora en MyInvestor</a></p>
       <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — EMA200 Strategy</p>
@@ -31,12 +38,16 @@ const emailTemplates = {
       <h3>¿Qué hacer?</h3>
       <ol>
         <li>Ve a tu cuenta de MyInvestor</li>
-        <li>En el Fondo Monetario (${config.funds.espera.isin}), vende una parte</li>
-        <li>Compra el S&P 500 (${config.funds.crecimiento.isin})</li>
+        <li>En el <strong>Fondo Monetario</strong> (${config.funds.espera.isin}), vende la parte que quieras invertir (esta es tu "pólvora seca" reservada para las caídas)</li>
+        <li>Compra el <strong>${config.funds.crecimiento.name}</strong> (${config.funds.crecimiento.isin})</li>
       </ol>
       
       <p style="background-color: #fffacd; padding: 15px; border-radius: 5px;">
         <strong>Nota:</strong> Históricamente, esta estrategia ha generado oportunidades de compra cada 2-3 años. Este es el tipo de momento que genera rentabilidad a largo plazo.
+      </p>
+      
+      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
+        <strong>Recuerda tu reparto habitual:</strong> cada vez que aportas dinero nuevo, un <strong>70%</strong> va al Fondo Monetario (pólvora para aprovechar caídas como esta) y un <strong>30%</strong> siempre al ${config.funds.crecimiento.name}, para no perderte la subida continua del mercado.
       </p>
       
       <p><a href="https://www.myinvestor.es" style="background-color: #003366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accede a MyInvestor</a></p>
@@ -50,14 +61,14 @@ const emailTemplates = {
       <h2>Inicio de rotación a fondos defensivos</h2>
       <p>Has invertido sabiamente y el mercado ha recompensado tu disciplina. Ahora es el momento de <strong>proteger lo que has construido</strong>.</p>
       
-      <p><strong>Tu plan:</strong> Rotar el <strong>20%</strong> de tu posición en S&P 500 hacia el Fondo de Dividendos (Tramo ${data.rotationYear} de 5).</p>
+      <p><strong>Tu plan:</strong> Rotar el <strong>20%</strong> de tu posición en ${config.funds.crecimiento.name} hacia el Fondo de Dividendos (Tramo ${data.rotationYear} de 5).</p>
       
       <p>Esta rotación gradual te permitirá vivir de los dividendos en tu jubilación mientras mantienes exposición al crecimiento.</p>
       
       <h3>¿Qué hacer?</h3>
       <ol>
         <li>Ve a MyInvestor</li>
-        <li>En el S&P 500 (${config.funds.crecimiento.isin}), vende el <strong>20%</strong> de tu posición</li>
+        <li>En el <strong>${config.funds.crecimiento.name}</strong> (${config.funds.crecimiento.isin}), vende el <strong>20%</strong> de tu posición</li>
         <li>Compra el Fondo de Dividendos (${config.funds.jubilacion.isin})</li>
       </ol>
       

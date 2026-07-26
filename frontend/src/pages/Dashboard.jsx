@@ -390,9 +390,13 @@ export default function Dashboard() {
                 Copia el ISIN del fondo que necesites → pégalo en el <strong>buscador de fondos</strong> de la app de MyInvestor
                 → localízalo y haz la acción que corresponda según el contexto:
               </p>
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-4 text-sm text-gray-700">
+                <p className="font-semibold text-navy mb-1">Cómo repartir cada aportación (70 / 30)</p>
+                <p>Cada vez que separes dinero para invertir: <strong>70% al Fondo Monetario</strong> (pólvora para las caídas) y <strong>30% al fondo de crecimiento mundial</strong> (siempre invertido, para no perder la subida continua del mercado).</p>
+              </div>
               <ul className="text-sm text-gray-600 mb-6 ml-4 space-y-1">
-                <li>• <strong>Fondo de espera</strong>: añade aquí tu dinero, todas las veces que quieras, mientras el S&amp;P 500 esté por encima de la EMA200.</li>
-                <li>• <strong>Fondo de crecimiento</strong>: transfiere tu dinero desde el fondo de espera cuando recibas una señal de compra (S&amp;P 500 cruza a la baja la EMA200).</li>
+                <li>• <strong>Fondo de espera (Monetario)</strong>: recibe el 70% de cada aportación mientras el S&amp;P 500 esté por encima de la EMA200. Es tu reserva para aprovechar las caídas.</li>
+                <li>• <strong>Fondo de crecimiento (Mundo Desarrollado y Emergente)</strong>: recibe el 30% de cada aportación siempre. Además, cuando recibas una señal de compra (S&amp;P 500 cruza a la baja la EMA200), transfiere aquí lo acumulado en el Monetario.</li>
                 <li>• <strong>Fondo de dividendos</strong>: rota el 20% anual durante los últimos 5 años antes de tu jubilación desde el fondo de crecimiento cuando recibas cada aviso.</li>
               </ul>
               

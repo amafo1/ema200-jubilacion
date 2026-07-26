@@ -110,6 +110,10 @@ export default function Plan() {
             <span className="text-gray-400">→</span>
             <span className="font-bold text-green-600">JUBILACIÓN {registrationData?.birthDate ? new Date(registrationData.birthDate).getFullYear() + 67 : '20XX'}</span>
           </div>
+          <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600">
+            <p className="font-semibold text-navy mb-1">Cómo repartes cada aportación</p>
+            <p>Un <strong>70%</strong> va al <strong>Fondo Monetario</strong> (tu reserva para aprovechar las caídas) y un <strong>30%</strong> siempre al <strong>MyInvestor Mundo Desarrollado y Emergente</strong> (renta variable mundial, para no perder la subida continua del mercado). Cuando el S&amp;P 500 toca su EMA200, mueves el Monetario al fondo de crecimiento.</p>
+          </div>
         </div>
         
         {/* Aportación mensual editable */}
