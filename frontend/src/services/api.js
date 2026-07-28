@@ -51,6 +51,9 @@ export const adminAPI = {
   rejectUser: (userId, reason) => api.post(`/admin/reject-user/${userId}`, { reason }, {
     headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
   }),
+  revokeUser: (userId) => api.post(`/admin/revoke-user/${userId}`, {}, {
+    headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
+  }),
   getStats: () => api.get('/admin/stats', {
     headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
   }),

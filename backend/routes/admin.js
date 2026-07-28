@@ -199,6 +199,62 @@ router.post('/reject-user/:userId', authenticateAdmin, async (req, res) => {
 });
 
 /**
+ * POST /api/admin/revoke-user/:userId
+ * Revocar el acceso de un usuario previamente aprobado.
+ * Lo devuelve al estado 'pending' para que pueda revisarse de nuevo.
+ */
+router.post('/revoke-user/:userId', authenticateAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Proteger la cuenta de administrador: nunca se le puede revocar el acceso
+    const check = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    if (check.rows[0].email === config.adminEmail) {
+      return res.status(403).json({ error: 'No se puede revocar el acceso de la cuenta de administrador.' });
+    }
+
+    const result = await pool.query(
+      `UPDATE users
+       SET status = $1, approved_at = NULL
+       WHERE id = $2
+       RETURNING id, email, name, status`,
+      ['pending', userId]
+    );
+
+    const user = result.rows[0];
+
+    // Notificar al usuario (no bloqueante)
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Tu acceso ha sido pausado',
+        html: `
+          <p>Hola ${user.name || 'Inversor'},</p>
+          <p>Tu acceso a la plataforma ha sido <strong>pausado temporalmente</strong> y tu cuenta ha vuelto al estado pendiente de revisión.</p>
+          <p>Si crees que se trata de un error, por favor contacta con soporte.</p>
+        `
+      });
+    } catch (emailError) {
+      console.error('⚠️  No se pudo enviar el email de revocación (el acceso sí fue revocado):', emailError.response?.data || emailError.message);
+    }
+
+    console.log(`🚫 Acceso revocado a ${user.email}`);
+
+    res.json({
+      message: 'Acceso revocado. El usuario ha vuelto a estado pendiente.',
+      user
+    });
+
+  } catch (error) {
+    console.error('Error en revoke-user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/admin/stats
  * Estadísticas generales del sistema
  */

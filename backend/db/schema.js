@@ -55,14 +55,43 @@ CREATE INDEX IF NOT EXISTS idx_ema200_date ON ema200_history(date);
 CREATE INDEX IF NOT EXISTS idx_email_log_user ON email_log(user_id);
 `;
 
+// Migraciones idempotentes para bases de datos que ya existían antes de
+// introducir el sistema de aprobación de usuarios (columnas status/approved_at).
+const migrations = `
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+`;
+
 // Crea las tablas/índices en la base de datos (idempotente).
 async function initSchema(pool) {
+  const config = require('../config');
   const statements = schema.split(';').filter((s) => s.trim());
   for (const statement of statements) {
     if (statement.trim()) {
       await pool.query(statement);
     }
   }
+
+  // Aplicar migraciones idempotentes (columnas nuevas en instalaciones antiguas)
+  const migrationStatements = migrations.split(';').filter((s) => s.trim());
+  for (const statement of migrationStatements) {
+    if (statement.trim()) {
+      await pool.query(statement);
+    }
+  }
+
+  // Garantizar que la cuenta de administrador esté siempre aprobada.
+  // NOTA: esto NO auto-aprueba al resto de usuarios; los nuevos registros
+  // permanecen en estado 'pending' hasta que el admin los apruebe.
+  if (config.adminEmail) {
+    await pool.query(
+      `UPDATE users
+       SET status = 'approved', approved_at = COALESCE(approved_at, CURRENT_TIMESTAMP)
+       WHERE email = $1 AND status IS DISTINCT FROM 'approved'`,
+      [config.adminEmail]
+    );
+  }
 }
 
-module.exports = { schema, initSchema };
+module.exports = { schema, initSchema, migrations };

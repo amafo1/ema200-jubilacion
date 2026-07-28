@@ -63,6 +63,7 @@ export default function Plan() {
     parseFloat(registrationData?.monthlyContribution) || 500
   );
   const [activeScenario, setActiveScenario] = useState('historic');
+  const [showScenariosModal, setShowScenariosModal] = useState(false);
   
   const scenarios = useMemo(() => ({
     conservative: simulateScenario(registrationData?.birthDate, monthlyContribution, 'conservative'),
@@ -79,19 +80,38 @@ export default function Plan() {
     optimistic: 'Optimista'
   };
   
-  const ScenarioCard = ({ type, title, description }) => (
-    <div
-      onClick={() => setActiveScenario(type)}
-      className={`cursor-pointer p-6 rounded-lg border-2 transition min-h-[120px] flex flex-col justify-center ${
-        activeScenario === type
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-200 bg-white hover:border-blue-300'
-      }`}
-    >
-      <h3 className="font-bold text-lg mb-2">{title}</h3>
-      <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
-    </div>
-  );
+  const selectScenario = (type) => {
+    setActiveScenario(type);
+    setShowScenariosModal(false);
+  };
+  
+  const ScenarioCard = ({ type, title, description }) => {
+    const data = scenarios[type] || {};
+    return (
+      <div
+        onClick={() => selectScenario(type)}
+        className={`cursor-pointer p-5 rounded-lg border-2 transition ${
+          activeScenario === type
+            ? 'border-blue-500 bg-blue-50'
+            : 'border-gray-200 bg-white hover:border-blue-300'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-bold text-lg">{title}</h3>
+          {type === 'historic' && (
+            <span className="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">Recomendado</span>
+          )}
+        </div>
+        <p className="text-sm text-gray-600 leading-relaxed mb-3">{description}</p>
+        {data.patrimonioEstimado ? (
+          <div className="text-sm text-gray-700 border-t border-gray-100 pt-3">
+            <p>Patrimonio estimado: <strong className="text-navy">€{data.patrimonioEstimado.toLocaleString('es-ES', { maximumFractionDigits: 0 })}</strong></p>
+            <p>Renta mensual neta: <strong className="text-green-600">€{data.dividendosMensualNeto?.toFixed(2)}</strong></p>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
   
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -141,11 +161,36 @@ export default function Plan() {
           </div>
         )}
         
-        {/* Selección de escenarios */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <ScenarioCard type="conservative" title="Conservador" description="7% retorno anual (bajo riesgo)" />
-          <ScenarioCard type="historic" title="Histórico" description="10% retorno anual (recomendado)" />
-          <ScenarioCard type="optimistic" title="Optimista" description="13% retorno anual (alto riesgo)" />
+        {/* Escenario por defecto: solo el Histórico. El resto se ven en un modal. */}
+        <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-blue-500 font-semibold mb-1">Proyección recomendada</p>
+              <h3 className="font-bold text-lg text-navy">Escenario Histórico · 10% anual</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Basado en la rentabilidad media histórica del S&amp;P 500 a largo plazo.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowScenariosModal(true)}
+              className="shrink-0 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 font-semibold py-2.5 px-4 rounded-lg transition text-sm min-h-[44px]"
+            >
+              Ver otros escenarios
+            </button>
+          </div>
+          {activeScenario !== 'historic' && (
+            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-sm text-gray-700">
+                Mostrando el escenario <strong>{scenarioTitles[activeScenario]}</strong> ({(ANNUAL_RETURNS[activeScenario] * 100).toFixed(0)}% anual).
+              </p>
+              <button
+                onClick={() => setActiveScenario('historic')}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+              >
+                Volver al recomendado
+              </button>
+            </div>
+          )}
         </div>
         
         {/* Resultados del simulador */}
@@ -199,6 +244,40 @@ export default function Plan() {
           </button>
         </div>
       </div>
+      
+      {/* Modal: otros escenarios */}
+      {showScenariosModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
+          onClick={() => setShowScenariosModal(false)}
+        >
+          <div
+            className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-navy">Escenarios de proyección</h2>
+              <button
+                onClick={() => setShowScenariosModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-gray-700 mb-5">
+                Todos son proyecciones del <strong>mismo plan de inversión</strong> (mismo reparto 70/30 y los mismos fondos). Lo único que cambia es la <strong>rentabilidad media anual estimada</strong> que usamos para el cálculo. No son perfiles de riesgo distintos.
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <ScenarioCard type="conservative" title="Conservador" description="7% retorno anual medio estimado (hipótesis prudente)" />
+                <ScenarioCard type="historic" title="Histórico" description="10% retorno anual medio estimado (media histórica del S&P 500)" />
+                <ScenarioCard type="optimistic" title="Optimista" description="13% retorno anual medio estimado (hipótesis optimista)" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
