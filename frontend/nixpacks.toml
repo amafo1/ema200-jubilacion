@@ -1,8 +1,8 @@
-# Fuerza Node.js 20 en Railway/Nixpacks (Vite 8 requiere Node >= 20.19).
+# Fuerza Node.js 22 en Railway/Nixpacks (Vite 8 requiere Node >= 20.19; usamos 22 LTS).
 providers = ["node"]
 
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_22"]
 
 [phases.install]
 cmds = ["npm install"]
