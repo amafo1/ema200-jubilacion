@@ -66,6 +66,11 @@ export default function Dashboard() {
   const [adminLoading, setAdminLoading] = useState(false);
   const [rejectingUser, setRejectingUser] = useState(null);
   const [rejectReason, setRejectReason] = useState({});
+  // Datos personales editables (nombre y email)
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMsg, setProfileMsg] = useState({ type: '', text: '' });
   
   useEffect(() => {
     loadDashboardData();
@@ -77,6 +82,37 @@ export default function Dashboard() {
       setMonthlyInput(Math.round(Number(profile.monthly_contribution)));
     }
   }, [profile]);
+  
+  // Inicializar los campos editables de datos personales
+  useEffect(() => {
+    if (profile) {
+      setEditName(profile.name || '');
+      setEditEmail(profile.email || '');
+    }
+  }, [profile]);
+  
+  const handleSaveProfileData = async () => {
+    setSavingProfile(true);
+    setProfileMsg({ type: '', text: '' });
+    try {
+      const payload = { name: editName };
+      // Solo enviar el email si el usuario no es admin y ha cambiado
+      if (!isAdmin && editEmail && editEmail.trim().toLowerCase() !== (profile?.email || '').toLowerCase()) {
+        payload.email = editEmail.trim();
+      }
+      const res = await userAPI.updateProfile(payload);
+      setProfile((prev) => ({ ...prev, name: res.data.name, email: res.data.email }));
+      setEditName(res.data.name || '');
+      setEditEmail(res.data.email || '');
+      setProfileMsg({ type: 'ok', text: '✓ Datos actualizados' });
+      setTimeout(() => setProfileMsg({ type: '', text: '' }), 4000);
+    } catch (err) {
+      const text = err.response?.data?.error || 'No se pudieron guardar los cambios. Inténtalo de nuevo.';
+      setProfileMsg({ type: 'error', text });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
   
   const handleSaveContribution = async () => {
     setSaving(true);
@@ -646,17 +682,55 @@ export default function Dashboard() {
               <h3 className="text-xl font-bold text-navy mb-4">Datos personales</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <p className="text-gray-800 font-semibold">{profile?.email}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Tu nombre"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none min-h-[48px]"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                  <p className="text-gray-800 font-semibold">{profile?.name || '—'}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  {isAdmin ? (
+                    <>
+                      <p className="text-gray-800 font-semibold">{profile?.email}</p>
+                      <p className="text-xs text-gray-400 mt-1">El email del administrador no se puede cambiar.</p>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        placeholder="tucorreo@ejemplo.com"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none min-h-[48px]"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Las notificaciones y alertas se enviarán a este correo.</p>
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de nacimiento</label>
                   <p className="text-gray-800 font-semibold">{formatBirthDate(profile?.birth_date)}</p>
                 </div>
+                
+                {profileMsg.text && (
+                  <p className={`text-sm font-medium ${profileMsg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                    {profileMsg.text}
+                  </p>
+                )}
+                
+                <button
+                  onClick={handleSaveProfileData}
+                  disabled={savingProfile}
+                  className="w-full bg-blue-600 active:bg-blue-700 disabled:opacity-60 text-white font-bold py-3 px-4 rounded-lg min-h-[48px]"
+                >
+                  {savingProfile ? 'Guardando...' : 'Guardar cambios'}
+                </button>
               </div>
             </div>
             

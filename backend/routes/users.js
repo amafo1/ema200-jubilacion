@@ -52,20 +52,51 @@ router.get('/profile', authenticateToken, async (req, res) => {
  */
 router.put('/profile', authenticateToken, async (req, res) => {
   try {
-    const { name, monthlyContribution } = req.body;
+    const { name, email, monthlyContribution } = req.body;
     const userId = req.user.userId;
     
-    // Actualizar solo nombre y aportación (otros campos no son editables)
+    // Normalizar el email si viene informado
+    let newEmail = null;
+    if (email !== undefined && email !== null && String(email).trim() !== '') {
+      newEmail = String(email).trim().toLowerCase();
+      // Validación básica de formato
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmail)) {
+        return res.status(400).json({ error: 'Email no válido' });
+      }
+    }
+    
+    // Si se intenta cambiar el email, aplicar salvaguardas
+    if (newEmail) {
+      const current = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
+      if (current.rows.length === 0) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      const currentEmail = current.rows[0].email;
+      // La cuenta de administrador no puede cambiar su email (rompería el acceso admin)
+      if (currentEmail === config.adminEmail && newEmail !== config.adminEmail) {
+        return res.status(403).json({ error: 'La cuenta de administrador no puede cambiar su email' });
+      }
+    }
+    
+    // Actualizar nombre, email y aportación (la fecha de nacimiento no es editable)
     const result = await pool.query(
-      `UPDATE users SET name = COALESCE($1, name), monthly_contribution = COALESCE($2, monthly_contribution)
-       WHERE id = $3
-       RETURNING id, email, name, birth_date, monthly_contribution`,
-      [name || null, monthlyContribution || null, userId]
+      `UPDATE users
+       SET name = COALESCE($1, name),
+           email = COALESCE($2, email),
+           monthly_contribution = COALESCE($3, monthly_contribution)
+       WHERE id = $4
+       RETURNING id, email, name, birth_date, monthly_contribution, status`,
+      [name || null, newEmail, monthlyContribution || null, userId]
     );
     
     res.json(result.rows[0]);
     
   } catch (error) {
+    // Violación de restricción UNIQUE (email duplicado)
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Ese email ya está en uso por otra cuenta' });
+    }
     console.error('Error en PUT profile:', error);
     res.status(500).json({ error: error.message });
   }
