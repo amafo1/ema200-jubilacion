@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { authAPI } from '../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
   const { setToken, setUser } = useAuthStore();
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
@@ -16,6 +17,11 @@ export default function Login() {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
   
+  // Si el usuario ya tiene sesión activa, ir directamente al dashboard
+  if (isLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');

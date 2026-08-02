@@ -1,7 +1,14 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+
+  // Si el usuario ya tiene sesión activa, ir directamente al dashboard
+  if (isLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
   
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-navy-dark via-navy to-navy-dark flex items-center justify-center px-4">
