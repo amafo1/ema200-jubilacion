@@ -60,12 +60,10 @@ export default function Dashboard() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   // Administración
-  const [pendingUsers, setPendingUsers] = useState([]);
-  const [approvedUsers, setApprovedUsers] = useState([]);
-  const [rejectedUsers, setRejectedUsers] = useState([]);
+  const [adminUsers, setAdminUsers] = useState([]);
   const [adminLoading, setAdminLoading] = useState(false);
-  const [rejectingUser, setRejectingUser] = useState(null);
-  const [rejectReason, setRejectReason] = useState({});
+  const [adminPage, setAdminPage] = useState(1);
+  const ADMIN_PAGE_SIZE = 10;
   // Datos personales editables (nombre y email)
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -179,48 +177,12 @@ export default function Dashboard() {
   const loadAdminUsers = async () => {
     setAdminLoading(true);
     try {
-      const [pendingRes, activeRes] = await Promise.all([
-        adminAPI.getPendingUsers(),
-        adminAPI.getActiveUsers()
-      ]);
-      setPendingUsers(pendingRes.data);
-      // active-users devuelve aprobados y rechazados juntos
-      setApprovedUsers(activeRes.data.filter((u) => u.status === 'approved'));
-      setRejectedUsers(activeRes.data.filter((u) => u.status === 'rejected'));
+      const activeRes = await adminAPI.getActiveUsers();
+      setAdminUsers(activeRes.data);
     } catch (error) {
       console.error('Error cargando usuarios:', error);
     } finally {
       setAdminLoading(false);
-    }
-  };
-  
-  const handleApproveUser = async (userId) => {
-    try {
-      await adminAPI.approveUser(userId);
-      await loadAdminUsers();
-    } catch (error) {
-      console.error('Error aprobando usuario:', error);
-    }
-  };
-  
-  const handleRejectUser = async (userId) => {
-    try {
-      await adminAPI.rejectUser(userId, rejectReason[userId] || '');
-      setRejectingUser(null);
-      setRejectReason({});
-      await loadAdminUsers();
-    } catch (error) {
-      console.error('Error rechazando usuario:', error);
-    }
-  };
-  
-  const handleRevokeUser = async (userId) => {
-    if (!window.confirm('¿Seguro que quieres revocar el acceso de este usuario? Volverá a estado pendiente.')) return;
-    try {
-      await adminAPI.revokeUser(userId);
-      await loadAdminUsers();
-    } catch (error) {
-      console.error('Error revocando usuario:', error);
     }
   };
   
@@ -281,7 +243,7 @@ export default function Dashboard() {
               {tab === 'overview' && '📊 Resumen'}
               {tab === 'funds' && '💰 Mis fondos'}
               {tab === 'history' && '📈 Historial EMA'}
-              {tab === 'admin' && `👥 Administración${pendingUsers.length ? ` (${pendingUsers.length})` : ''}`}
+              {tab === 'admin' && `👥 Administración${adminUsers.length ? ` (${adminUsers.length})` : ''}`}
               {tab === 'settings' && '⚙️ Configuración'}
             </button>
           ))}
@@ -513,167 +475,86 @@ export default function Dashboard() {
         )}
         
         {/* Admin Tab */}
-        {activeTab === 'admin' && isAdmin && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-navy">Gestión de usuarios</h3>
-              <button
-                onClick={loadAdminUsers}
-                className="text-sm text-blue-600 active:text-blue-800 font-medium border border-blue-200 rounded-lg px-3 py-2 min-h-[40px]"
-              >
-                ↻ Actualizar
-              </button>
-            </div>
-            
-            {adminLoading ? (
-              <div className="bg-white p-8 rounded-lg shadow-md text-center text-gray-600">Cargando...</div>
-            ) : (
-              <>
-                {/* Sección: Pendientes */}
-                <section className="space-y-3">
-                  <h4 className="text-lg font-bold text-amber-700 flex items-center gap-2">
-                    ⏳ Pendientes de aprobación
-                    <span className="text-sm font-semibold bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">{pendingUsers.length}</span>
-                  </h4>
-                  {pendingUsers.length === 0 ? (
-                    <div className="bg-white p-6 rounded-lg shadow-sm text-center text-gray-500 text-sm">No hay usuarios pendientes.</div>
-                  ) : (
-                    pendingUsers.map((user) => (
-                      <div key={user.id} className="bg-white p-5 rounded-lg shadow-md border-l-4 border-amber-400">
-                        <div className="mb-4">
-                          <h5 className="text-lg font-bold text-navy">{user.name || 'Sin nombre'}</h5>
-                          <p className="text-gray-600 text-sm break-all">{user.email}</p>
-                          <p className="text-gray-500 text-xs mt-1">
-                            Registrado: {new Date(user.created_at).toLocaleDateString('es-ES')}
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-xs text-gray-500">Fecha de nacimiento</p>
-                            <p className="font-semibold text-sm">{formatBirthDate(user.birth_date)}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-xs text-gray-500">Aportación mensual</p>
-                            <p className="font-semibold text-sm">€{user.monthly_contribution}</p>
-                          </div>
-                        </div>
-                        
-                        {rejectingUser === user.id && (
-                          <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Razón del rechazo (opcional)</label>
-                            <textarea
-                              value={rejectReason[user.id] || ''}
-                              onChange={(e) => setRejectReason({ ...rejectReason, [user.id]: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
-                              rows="3"
-                              placeholder="Explica el motivo del rechazo..."
-                            />
-                          </div>
-                        )}
-                        
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <button
-                            onClick={() => handleApproveUser(user.id)}
-                            className="flex-1 bg-green-600 active:bg-green-700 text-white font-bold py-3 px-4 rounded-lg min-h-[48px]"
-                          >
-                            ✓ Aprobar
-                          </button>
-                          {rejectingUser === user.id ? (
-                            <>
-                              <button
-                                onClick={() => handleRejectUser(user.id)}
-                                className="flex-1 bg-red-600 active:bg-red-700 text-white font-bold py-3 px-4 rounded-lg min-h-[48px]"
-                              >
-                                Confirmar rechazo
-                              </button>
-                              <button
-                                onClick={() => { setRejectingUser(null); setRejectReason({}); }}
-                                className="flex-1 bg-gray-200 active:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg min-h-[48px]"
-                              >
-                                Cancelar
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => setRejectingUser(user.id)}
-                              className="flex-1 border border-red-300 text-red-600 active:bg-red-50 font-bold py-3 px-4 rounded-lg min-h-[48px]"
-                            >
-                              ✗ Rechazar
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </section>
-                
-                {/* Sección: Aprobados */}
-                <section className="space-y-3">
-                  <h4 className="text-lg font-bold text-green-700 flex items-center gap-2">
-                    ✅ Usuarios aprobados
-                    <span className="text-sm font-semibold bg-green-100 text-green-700 rounded-full px-2 py-0.5">{approvedUsers.length}</span>
-                  </h4>
-                  {approvedUsers.length === 0 ? (
-                    <div className="bg-white p-6 rounded-lg shadow-sm text-center text-gray-500 text-sm">No hay usuarios aprobados.</div>
-                  ) : (
-                    approvedUsers.map((user) => {
-                      const isAdminRow = user.email === ADMIN_EMAIL;
-                      return (
-                        <div key={user.id} className="bg-white p-5 rounded-lg shadow-md border-l-4 border-green-400">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div>
-                              <h5 className="text-lg font-bold text-navy">
-                                {user.name || 'Sin nombre'}
+        {activeTab === 'admin' && isAdmin && (() => {
+          const totalPages = Math.max(1, Math.ceil(adminUsers.length / ADMIN_PAGE_SIZE));
+          const currentPage = Math.min(adminPage, totalPages);
+          const startIndex = (currentPage - 1) * ADMIN_PAGE_SIZE;
+          const pageUsers = adminUsers.slice(startIndex, startIndex + ADMIN_PAGE_SIZE);
+          return (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-navy">Usuarios ({adminUsers.length})</h3>
+                <button
+                  onClick={loadAdminUsers}
+                  className="text-sm text-blue-600 active:text-blue-800 font-medium border border-blue-200 rounded-lg px-3 py-2 min-h-[40px]"
+                >
+                  ↻ Actualizar
+                </button>
+              </div>
+
+              {adminLoading ? (
+                <div className="bg-white p-8 rounded-lg shadow-md text-center text-gray-600">Cargando...</div>
+              ) : adminUsers.length === 0 ? (
+                <div className="bg-white p-8 rounded-lg shadow-md text-center text-gray-600">Todavía no hay usuarios dados de alta.</div>
+              ) : (
+                <>
+                  <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+                    <table className="w-full min-w-[720px]">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-6 py-3 text-left font-semibold text-gray-700">Nombre</th>
+                          <th className="px-6 py-3 text-left font-semibold text-gray-700">Email</th>
+                          <th className="px-6 py-3 text-left font-semibold text-gray-700">Aportación</th>
+                          <th className="px-6 py-3 text-left font-semibold text-gray-700">Años para jubilación</th>
+                          <th className="px-6 py-3 text-left font-semibold text-gray-700">Fecha de alta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageUsers.map((user) => {
+                          const isAdminRow = user.email === ADMIN_EMAIL;
+                          return (
+                            <tr key={user.id} className="border-t border-gray-200 hover:bg-gray-50">
+                              <td className="px-6 py-4 font-semibold text-navy">
+                                {user.name || '—'}
                                 {isAdminRow && <span className="ml-2 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 align-middle">Administrador</span>}
-                              </h5>
-                              <p className="text-gray-600 text-sm break-all">{user.email}</p>
-                              <p className="text-gray-500 text-xs mt-1">
-                                Aportación: €{user.monthly_contribution} · Aprobado: {user.approved_at ? new Date(user.approved_at).toLocaleDateString('es-ES') : '—'}
-                              </p>
-                            </div>
-                            {isAdminRow ? (
-                              <span className="text-xs text-gray-400 shrink-0">No revocable</span>
-                            ) : (
-                              <button
-                                onClick={() => handleRevokeUser(user.id)}
-                                className="shrink-0 border border-red-300 text-red-600 active:bg-red-50 font-bold py-2.5 px-4 rounded-lg min-h-[44px] text-sm"
-                              >
-                                🚫 Revocar acceso
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
+                              </td>
+                              <td className="px-6 py-4 text-gray-700 break-all">{user.email}</td>
+                              <td className="px-6 py-4 text-gray-700">€{user.monthly_contribution}</td>
+                              <td className="px-6 py-4 text-gray-700">{user.years_until_retirement ?? '—'}</td>
+                              <td className="px-6 py-4 text-gray-700">
+                                {user.created_at ? new Date(user.created_at).toLocaleDateString('es-ES') : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-2">
+                      <button
+                        onClick={() => setAdminPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 rounded-lg font-semibold bg-white border border-gray-300 text-gray-700 active:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
+                      >
+                        ‹ Anterior
+                      </button>
+                      <span className="text-sm text-gray-600">Página {currentPage} de {totalPages}</span>
+                      <button
+                        onClick={() => setAdminPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 rounded-lg font-semibold bg-white border border-gray-300 text-gray-700 active:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
+                      >
+                        Siguiente ›
+                      </button>
+                    </div>
                   )}
-                </section>
-                
-                {/* Sección: Rechazados / historial */}
-                <section className="space-y-3">
-                  <h4 className="text-lg font-bold text-gray-600 flex items-center gap-2">
-                    ❌ Rechazados / historial
-                    <span className="text-sm font-semibold bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">{rejectedUsers.length}</span>
-                  </h4>
-                  {rejectedUsers.length === 0 ? (
-                    <div className="bg-white p-6 rounded-lg shadow-sm text-center text-gray-500 text-sm">No hay usuarios rechazados.</div>
-                  ) : (
-                    rejectedUsers.map((user) => (
-                      <div key={user.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 opacity-90">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <h5 className="font-bold text-gray-700">{user.name || 'Sin nombre'}</h5>
-                            <p className="text-gray-500 text-sm break-all">{user.email}</p>
-                          </div>
-                          <span className="shrink-0 text-xs font-semibold bg-gray-200 text-gray-600 rounded-full px-3 py-1">Rechazado</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </section>
-              </>
-            )}
-          </div>
-        )}
+                </>
+              )}
+            </div>
+          );
+        })()}
         
         {/* Settings Tab */}
         {activeTab === 'settings' && (
@@ -753,6 +634,11 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Disclaimer legal */}
+        <p className="text-xs text-gray-400 text-center mt-10 max-w-2xl mx-auto leading-relaxed">
+          Esta herramienta es solo informativa y educativa. No constituye asesoramiento financiero ni una recomendación de inversión. Invierte bajo tu propia responsabilidad.
+        </p>
       </div>
       
       {/* Modal de confirmación para eliminar cuenta */}

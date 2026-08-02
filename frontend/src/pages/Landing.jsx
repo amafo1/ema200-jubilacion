@@ -51,9 +51,14 @@ export default function Landing() {
         </p>
         
         {/* Pie de página */}
-        <p className="text-gray-400 text-sm absolute bottom-8 left-0 right-0 px-4">
-          Diseñada para inversores residentes en España
-        </p>
+        <div className="absolute bottom-6 left-0 right-0 px-4">
+          <p className="text-gray-400 text-sm">
+            Diseñada para inversores residentes en España
+          </p>
+          <p className="text-gray-500 text-xs mt-3 max-w-xl mx-auto leading-relaxed">
+            Esta herramienta es solo informativa y educativa. No constituye asesoramiento financiero ni una recomendación de inversión. Invierte bajo tu propia responsabilidad.
+          </p>
+        </div>
       </div>
     </div>
   );

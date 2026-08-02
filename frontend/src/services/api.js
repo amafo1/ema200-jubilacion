@@ -57,19 +57,7 @@ export const fundAPI = {
 
 // Admin
 export const adminAPI = {
-  getPendingUsers: () => api.get('/admin/pending-users', {
-    headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
-  }),
   getActiveUsers: () => api.get('/admin/active-users', {
-    headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
-  }),
-  approveUser: (userId) => api.post(`/admin/approve-user/${userId}`, {}, {
-    headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
-  }),
-  rejectUser: (userId, reason) => api.post(`/admin/reject-user/${userId}`, { reason }, {
-    headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
-  }),
-  revokeUser: (userId) => api.post(`/admin/revoke-user/${userId}`, {}, {
     headers: { 'x-admin-email': 'amafo.ws@gmail.com' }
   }),
   getStats: () => api.get('/admin/stats', {

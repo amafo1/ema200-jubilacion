@@ -38,46 +38,56 @@ router.post('/register', async (req, res) => {
     // Hashear PIN
     const pinHash = await bcryptjs.hash(pin, 10);
     
-    // Insertar usuario
+    // Insertar usuario ya activo (alta libre: no requiere aprobación del administrador)
     const result = await pool.query(
-      `INSERT INTO users (email, name, birth_date, monthly_contribution, pin_hash, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO users (email, name, birth_date, monthly_contribution, pin_hash, status, approved_at)
+       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
        RETURNING id, email, name, birth_date, monthly_contribution, status, created_at`,
-      [email, name || null, birthDate, monthlyContribution, pinHash, 'pending']
+      [email, name || null, birthDate, monthlyContribution, pinHash, 'approved']
     );
     
     const user = result.rows[0];
     
-    // Enviar email de confirmación (no bloqueante: si el email falla, el registro no debe fallar)
+    // Enviar email de bienvenida (no bloqueante: si el email falla, el registro no debe fallar)
     try {
       await sendEmail({
         to: email,
-        template: 'registration_pending',
-        data: { name: name || 'Inversor' }
+        subject: '¡Bienvenido! Tu jubilación automática comienza',
+        html: `
+          <h2>¡Bienvenido a tu jubilación automática!</h2>
+          <p>Hola ${name || 'Inversor'},</p>
+          <p>Tu cuenta ya está <strong>activa</strong>. Puedes acceder a la plataforma con tu email y PIN, y empezarás a recibir alertas automáticas en los momentos clave.</p>
+          <p style="background-color: #d4edda; padding: 15px; border-radius: 5px; color: #155724;">
+            <strong>Tu jubilación está en piloto automático.</strong> Te avisaremos en cada momento exacto en que debas actuar.
+          </p>
+          <p style="color: #666; font-size: 12px; margin-top: 30px;">Esta plataforma es una herramienta informativa y educativa. No constituye asesoramiento financiero ni una recomendación de inversión.</p>
+        `
       });
     } catch (emailError) {
-      console.error('⚠️  No se pudo enviar el email de registro (el usuario se creó igualmente):', emailError.response?.data || emailError.message);
+      console.error('⚠️  No se pudo enviar el email de bienvenida (el usuario se creó igualmente):', emailError.response?.data || emailError.message);
     }
     
-    // Notificar al administrador del nuevo registro pendiente (no bloqueante)
+    // Notificar al administrador del nuevo registro (no bloqueante, solo informativo)
     try {
       await sendEmail({
         to: config.adminEmail,
-        template: 'admin_new_registration',
-        data: {
-          name: name || 'Inversor',
-          email,
-          birthDate,
-          monthlyContribution,
-          adminUrl: `${config.frontendUrl}/admin`
-        }
+        subject: 'Nuevo usuario dado de alta',
+        html: `
+          <p>Se ha dado de alta un nuevo usuario:</p>
+          <ul>
+            <li><strong>Nombre:</strong> ${name || 'Inversor'}</li>
+            <li><strong>Email:</strong> ${email}</li>
+            <li><strong>Aportación mensual:</strong> €${monthlyContribution}</li>
+          </ul>
+          <p>Puedes verlo en tu <a href="${config.frontendUrl}/admin">panel de administración</a>.</p>
+        `
       });
     } catch (adminEmailError) {
       console.error('⚠️  No se pudo notificar al administrador del nuevo registro:', adminEmailError.response?.data || adminEmailError.message);
     }
     
     res.status(201).json({
-      message: 'Usuario registrado. Pendiente de activación por administrador.',
+      message: 'Usuario registrado y activado correctamente.',
       user
     });
     
@@ -116,11 +126,6 @@ router.post('/login', async (req, res) => {
     }
     
     const user = result.rows[0];
-    
-    // Verificar status
-    if (user.status !== 'approved') {
-      return res.status(403).json({ error: 'Tu cuenta no está aprobada aún' });
-    }
     
     // Verificar PIN
     const pinMatches = await bcryptjs.compare(pin, user.pin_hash);

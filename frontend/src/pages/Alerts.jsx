@@ -2,8 +2,6 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Alerts() {
   const navigate = useNavigate();
-  // Durante el onboarding la cuenta siempre está pendiente de aprobación.
-  const accountStatus = 'pending';
   
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -47,12 +45,10 @@ export default function Alerts() {
         </div>
         
         {/* Status Message */}
-        {accountStatus === 'pending' && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg mb-8">
-            <h3 className="font-bold text-yellow-900 mb-2">⏳ Tu cuenta está pendiente de activación</h3>
-            <p className="text-yellow-800">El administrador revisará tu solicitud en breve. Una vez aprobada, comenzarás a recibir estas alertas automáticamente.</p>
-          </div>
-        )}
+        <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-lg mb-8">
+          <h3 className="font-bold text-green-900 mb-2">✅ Tu cuenta ya está activa</h3>
+          <p className="text-green-800">No necesitas esperar ninguna aprobación. A partir de ahora recibirás estas alertas automáticamente en tu email.</p>
+        </div>
         
         {/* Final Message */}
         <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mb-8">
