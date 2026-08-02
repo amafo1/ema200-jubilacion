@@ -15,6 +15,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Interceptor para manejar errores de autenticación (token expirado o inválido)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Si el token es inválido o expiró (401 o 403), hacer logout automático
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      const errorMsg = error.response.data?.error || '';
+      if (errorMsg.includes('Token') || errorMsg.includes('token')) {
+        // Limpiar sesión y redirigir al login
+        localStorage.removeItem('token');
+        localStorage.removeItem('registrationData');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Autenticación
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),

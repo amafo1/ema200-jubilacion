@@ -10,18 +10,38 @@ function loadRegistrationData() {
   }
 }
 
+// Recuperar datos del usuario guardados (persisten aunque se recargue la página)
+function loadUser() {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const useAuthStore = create((set) => ({
-  user: null,
+  user: loadUser(),
   token: localStorage.getItem('token') || null,
   isLoggedIn: !!localStorage.getItem('token'),
   
-  setUser: (user) => set({ user }),
+  setUser: (user) => {
+    if (user) {
+      try {
+        localStorage.setItem('user', JSON.stringify(user));
+      } catch {
+        // Ignorar si el navegador no permite almacenamiento
+      }
+    }
+    set({ user });
+  },
   setToken: (token) => {
     localStorage.setItem('token', token);
     set({ token, isLoggedIn: true });
   },
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     localStorage.removeItem('registrationData');
     set({ user: null, token: null, isLoggedIn: false, registrationData: null });
   },
