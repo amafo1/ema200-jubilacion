@@ -232,3 +232,11 @@ Acceder a `/admin` en el navegador. Se requiere email de administrador en header
 ## Licencia
 
 Propietaria - Todos los derechos reservados
+
+---
+## 🚀 Despliegue
+
+La aplicación está desplegada en **Northflank** (plan gratuito Developer Sandbox):
+- **Frontend**: https://web--frontend--7mdbf5fkfqgl.code.run
+- **Backend API**: https://web--backend--7mdbf5fkfqgl.code.run
+- **Auto-deploy**: ✅ Habilitado (cada push a `main` redespliega automáticamente)
