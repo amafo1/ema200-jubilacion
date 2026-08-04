@@ -58,7 +58,7 @@ export default function Landing() {
           Diseñada para inversores residentes en España
         </p>
         <p className="text-gray-500 text-xs mt-4 leading-loose tracking-wide">
-          Esta aplicación no gestiona dinero ni permite realizar inversiones. Es una herramienta exclusivamente informativa que proporciona alertas y notificaciones sobre puntos de entrada al mercado. No constituye asesoramiento financiero ni recomendación de inversión. Invierte bajo tu propia responsabilidad.
+          Esta aplicación no gestiona dinero ni permite realizar inversiones. Es una herramienta exclusivamente informativa y educativa que proporciona alertas y notificaciones sobre puntos de entrada al mercado. No constituye asesoramiento financiero ni recomendación de inversión. Invierte bajo tu propia responsabilidad.
         </p>
       </div>
     </div>
