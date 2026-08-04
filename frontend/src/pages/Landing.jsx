@@ -11,7 +11,7 @@ export default function Landing() {
   }
   
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-navy-dark via-navy to-navy-dark flex items-center justify-center px-4">
+    <div className="relative min-h-screen bg-gradient-to-b from-navy-dark via-navy to-navy-dark flex flex-col items-center justify-center px-4 py-10">
       <div className="text-center max-w-2xl">
         {/* Icono minimalista */}
         <div className="mb-8 flex justify-center">
@@ -50,15 +50,18 @@ export default function Landing() {
           </button>
         </p>
         
-        {/* Pie de página */}
-        <div className="absolute bottom-6 left-0 right-0 px-4">
-          <p className="text-gray-400 text-sm">
-            Diseñada para inversores residentes en España
-          </p>
-          <p className="text-gray-500 text-xs mt-3 max-w-xl mx-auto leading-relaxed">
-            Esta herramienta es solo informativa y educativa. No constituye asesoramiento financiero ni una recomendación de inversión. Invierte bajo tu propia responsabilidad.
-          </p>
-        </div>
+      </div>
+
+      {/* Pie de página */}
+      <div className="w-full max-w-xl mx-auto px-4 mt-16 text-center">
+        <p className="text-gray-400 text-sm">
+          Diseñada para inversores residentes en España
+        </p>
+        <p className="text-gray-500 text-xs mt-4 leading-loose tracking-wide">
+          Esta herramienta es solo informativa y educativa. No constituye
+          asesoramiento financiero ni una recomendación de inversión. Invierte
+          bajo tu propia responsabilidad.
+        </p>
       </div>
     </div>
   );
