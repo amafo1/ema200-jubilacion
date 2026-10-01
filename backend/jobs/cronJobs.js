@@ -10,8 +10,11 @@ function initializeCronJobs(dbPool) {
   
   console.log('📅 Inicializando cron jobs...');
   
-  // Diario a las 8:00 AM España - Revisar EMA200 y enviar señales de compra
-  cron.schedule('0 8 * * *', dailyEMA200Check, {
+  // Semanal (lunes) a las 8:00 AM España - Revisar EMA200 y enviar señales de compra.
+  // La EMA200 se calcula sobre velas SEMANALES, por lo que el valor solo cambia una vez
+  // por semana. Ejecutar a diario repetía la misma llamada a la API 6 de cada 7 días sin
+  // aportar información nueva; pasar a semanal reduce ~85% el consumo de créditos de la API.
+  cron.schedule('0 8 * * 1', weeklyEMA200Check, {
     timezone: 'Europe/Madrid'
   });
   
@@ -29,10 +32,11 @@ function initializeCronJobs(dbPool) {
 }
 
 /**
- * Tarea diaria: Revisar EMA200 de S&P 500, Gold y Bitcoin
+ * Tarea semanal (lunes): Revisar EMA200 de S&P 500, Gold y Bitcoin.
+ * La EMA200 es semanal, así que basta una ejecución por semana.
  */
-async function dailyEMA200Check() {
-  console.log(`\n⏰ [${new Date().toISOString()}] Ejecutando: Daily EMA200 Check`);
+async function weeklyEMA200Check() {
+  console.log(`\n⏰ [${new Date().toISOString()}] Ejecutando: Weekly EMA200 Check`);
   
   try {
     // Monitorear los 3 activos
@@ -57,7 +61,7 @@ async function dailyEMA200Check() {
     }
     
   } catch (error) {
-    console.error('❌ Error en dailyEMA200Check:', error.message);
+    console.error('❌ Error en weeklyEMA200Check:', error.message);
   }
 }
 
@@ -469,7 +473,7 @@ module.exports = {
   initializeCronJobs,
   calculateYearsUntilRetirement,
   // Exportados para pruebas unitarias (no usar en producción):
-  dailyEMA200Check,
+  weeklyEMA200Check,
   checkRotationAnniversary,
   processRotationTranche,
   resumePausedRotations,

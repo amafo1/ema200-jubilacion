@@ -94,21 +94,21 @@ function countEmails(pool, prefix) {
 
     // Día 1: mercado cruza a la baja (sin historial previo) -> DEBE avisar
     marketBelow = true;
-    await cron.dailyEMA200Check();
+    await cron.weeklyEMA200Check();
     assert.strictEqual(countEmails(pool, 'buy_signal'), 1, 'Día1: debe enviarse 1 señal de compra en el cruce');
 
     // Día 2: sigue por debajo -> NO debe reenviar
-    await cron.dailyEMA200Check();
+    await cron.weeklyEMA200Check();
     assert.strictEqual(countEmails(pool, 'buy_signal'), 1, 'Día2: no debe reenviar mientras siga por debajo');
 
     // Día 3: se recupera por encima -> NO avisa (y rearma)
     marketBelow = false;
-    await cron.dailyEMA200Check();
+    await cron.weeklyEMA200Check();
     assert.strictEqual(countEmails(pool, 'buy_signal'), 1, 'Día3: por encima no envía señal de compra');
 
     // Día 4: vuelve a cruzar a la baja -> DEBE avisar de nuevo (rearmado)
     marketBelow = true;
-    await cron.dailyEMA200Check();
+    await cron.weeklyEMA200Check();
     assert.strictEqual(countEmails(pool, 'buy_signal'), 2, 'Día4: nuevo cruce debe volver a avisar');
 
     console.log('✅ FALLO 1 OK: señal de compra solo en el cruce, con rearme.');
