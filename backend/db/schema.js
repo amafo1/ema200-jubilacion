@@ -16,13 +16,14 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de historial EMA200
+-- Tabla de historial EMA200 (multi-activo)
 CREATE TABLE IF NOT EXISTS ema200_history (
   id SERIAL PRIMARY KEY,
+  asset_code VARCHAR(10) DEFAULT 'SPY',
   date DATE NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
   ema200 DECIMAL(10, 2) NOT NULL,
-  signal VARCHAR(50), -- 'buy' si price <= ema200
+  signal VARCHAR(50), -- 'sell' para bajista, 'buy' para alcista, null si sin señal
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS alternative_alerts (
 -- Índices para optimizar queries
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
-CREATE INDEX IF NOT EXISTS idx_ema200_date ON ema200_history(date);
+CREATE INDEX IF NOT EXISTS idx_ema200_asset_date ON ema200_history(asset_code, date DESC);
 CREATE INDEX IF NOT EXISTS idx_email_log_user ON email_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_alt_alerts_user ON alternative_alerts(user_id);
 `;

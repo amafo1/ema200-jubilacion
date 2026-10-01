@@ -29,108 +29,190 @@ function initializeCronJobs(dbPool) {
 }
 
 /**
- * Tarea diaria: Revisar EMA200 del S&P 500
- * Si precio <= EMA200: enviar señal de compra
+ * Tarea diaria: Revisar EMA200 de S&P 500, Gold y Bitcoin
  */
 async function dailyEMA200Check() {
   console.log(`\n⏰ [${new Date().toISOString()}] Ejecutando: Daily EMA200 Check`);
   
   try {
+    // Monitorear los 3 activos
+    await checkAssetEMA200('SPY', 'SPY', 'S&P 500', 'bearish'); // Solo bajista
+    await checkAssetEMA200('XAU/USD', 'GOLD', 'Gold', 'both'); // Ambos cruces
+    await checkAssetEMA200('BTC/USD', 'BTC', 'Bitcoin', 'both'); // Ambos cruces
+    
+    // Si el S&P 500 se ha recuperado, intentar completar rotaciones pausadas
+    const latestSPY = await pool.query(
+      'SELECT price, ema200 FROM ema200_history WHERE asset_code = $1 ORDER BY date DESC LIMIT 1',
+      ['SPY']
+    );
+    if (latestSPY.rows.length > 0) {
+      const { price, ema200 } = latestSPY.rows[0];
+      if (parseFloat(price) > parseFloat(ema200)) {
+        await resumePausedRotations();
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error en dailyEMA200Check:', error.message);
+  }
+}
+
+/**
+ * Revisa la EMA200 de un activo específico y envía alertas según configuración
+ * @param {string} symbol - Símbolo para API (SPY, XAU/USD, BTC/USD)
+ * @param {string} assetCode - Código interno (SPY, GOLD, BTC)
+ * @param {string} assetName - Nombre legible para emails
+ * @param {string} crossType - 'bearish' (solo bajista), 'bullish' (solo alcista), 'both' (ambos)
+ */
+async function checkAssetEMA200(symbol, assetCode, assetName, crossType) {
+  try {
+    console.log(`\n📊 Revisando ${assetName} (${symbol})...`);
+    
     // Obtener datos de Twelve Data
     const response = await axios.get('https://api.twelvedata.com/time_series', {
       params: {
-        symbol: 'SPY',
+        symbol: symbol,
         interval: 'week',
-        // Se necesitan >= 200 velas semanales para calcular la EMA200 correctamente.
         outputsize: 260,
         apikey: config.twelveDataApiKey
       }
     });
     
     if (!response.data.values || response.data.values.length === 0) {
-      console.error('Error: No data from Twelve Data');
+      console.error(`Error: No data from Twelve Data for ${assetName}`);
       return;
     }
     
-    // Sin suficientes datos no se puede calcular una EMA200 fiable.
     if (response.data.values.length < 200) {
-      console.error(`Error: datos insuficientes para EMA200 (${response.data.values.length} velas). Se omite la comprobación.`);
+      console.error(`Error: datos insuficientes para ${assetName} (${response.data.values.length} velas)`);
       return;
     }
     
     const latestWeek = response.data.values[0];
     const currentPrice = parseFloat(latestWeek.close);
-    
-    // Calcular EMA200 manualmente (simplificado)
     const ema200 = calculateEMA(response.data.values, 200);
     
-    console.log(`📊 Precio SPY: $${currentPrice} | EMA200: $${ema200.toFixed(2)}`);
+    console.log(`   Precio: ${currentPrice.toFixed(2)} | EMA200: ${ema200.toFixed(2)}`);
     
     const isBelow = currentPrice <= ema200;
-    const signal = isBelow ? 'buy' : null;
+    let signal = null;
     
-    // FALLO 1 arreglado: solo se avisa en el CRUCE a la baja, no todos los días
-    // que el precio siga por debajo. Miramos el último estado ANTES de insertar
-    // el de hoy para detectar la transición (arriba -> abajo).
-    const prev = await pool.query(
-      'SELECT signal FROM ema200_history ORDER BY date DESC, id DESC LIMIT 1'
-    );
-    const prevBelow = prev.rows.length > 0 && prev.rows[0].signal === 'buy';
-    
-    // Guardar en historial (esto "rearma" la alerta: cuando el precio vuelve a
-    // subir por encima, prevBelow pasa a false y un nuevo cruce volverá a avisar).
-    await pool.query(
-      'INSERT INTO ema200_history (date, price, ema200, signal) VALUES ($1, $2, $3, $4)',
-      [new Date().toISOString().split('T')[0], currentPrice, ema200, signal]
-    );
-    
-    // Cruce fresco a la baja: estaba por encima y ahora ha tocado/cruzado.
-    const freshCross = isBelow && !prevBelow;
-    
-    if (freshCross) {
-      console.log('🎯 ¡SEÑAL DE COMPRA DETECTADA (nuevo cruce)!');
-      
-      // Obtener todos los usuarios aprobados
-      const users = await pool.query(
-        'SELECT * FROM users WHERE status = $1',
-        ['approved']
-      );
-      
-      // Enviar email a cada usuario
-      for (const user of users.rows) {
-        try {
-          await sendEmail({
-            to: user.email,
-            subject: '¡Es el momento! El S&P 500 ha tocado la EMA200',
-            template: 'buy_signal',
-            data: {
-              name: user.name || 'Inversor',
-              currentPrice,
-              ema200: ema200.toFixed(2)
-            }
-          });
-        } catch (emailErr) {
-          console.error(`No se pudo enviar señal de compra a ${user.email}:`, emailErr.message);
-        }
-        
-        // Registrar envío
-        await pool.query(
-          'INSERT INTO email_log (user_id, email_type, subject) VALUES ($1, $2, $3)',
-          [user.id, 'buy_signal', 'Señal de compra EMA200']
-        );
-      }
-    } else if (isBelow) {
-      console.log('ℹ️  Precio sigue por debajo de la EMA200 (ya avisado, no se reenvía).');
+    // Determinar señal según posición actual
+    if (isBelow && (crossType === 'bearish' || crossType === 'both')) {
+      signal = 'sell'; // Bajista
+    } else if (!isBelow && (crossType === 'bullish' || crossType === 'both')) {
+      signal = 'buy'; // Alcista
     }
     
-    // Si el mercado se ha recuperado (por encima de la EMA200), intentar completar
-    // los tramos de rotación que quedaron en pausa por un crash anterior.
-    if (!isBelow) {
-      await resumePausedRotations();
+    // Obtener estado anterior
+    const prev = await pool.query(
+      'SELECT signal FROM ema200_history WHERE asset_code = $1 ORDER BY date DESC LIMIT 1',
+      [assetCode]
+    );
+    const prevSignal = prev.rows.length > 0 ? prev.rows[0].signal : null;
+    
+    // Guardar en historial
+    await pool.query(
+      'INSERT INTO ema200_history (asset_code, date, price, ema200, signal) VALUES ($1, $2, $3, $4, $5)',
+      [assetCode, new Date().toISOString().split('T')[0], currentPrice, ema200, signal]
+    );
+    
+    // Detectar cruces frescos
+    const freshBearishCross = signal === 'sell' && prevSignal !== 'sell';
+    const freshBullishCross = signal === 'buy' && prevSignal !== 'buy';
+    
+    // Enviar alertas según el tipo de cruce detectado
+    if (freshBearishCross) {
+      console.log(`   ⚠️ CRUCE BAJISTA detectado para ${assetName}`);
+      await sendCrossAlerts(assetCode, assetName, 'sell', currentPrice, ema200);
+    }
+    
+    if (freshBullishCross) {
+      console.log(`   ✅ CRUCE ALCISTA detectado para ${assetName}`);
+      await sendCrossAlerts(assetCode, assetName, 'buy', currentPrice, ema200);
+    }
+    
+    if (!freshBearishCross && !freshBullishCross) {
+      console.log(`   ℹ️  Sin cruces nuevos para ${assetName}`);
     }
     
   } catch (error) {
-    console.error('❌ Error en dailyEMA200Check:', error.message);
+    console.error(`❌ Error revisando ${assetName}:`, error.message);
+  }
+}
+
+/**
+ * Envía alertas de cruce EMA200 a usuarios según configuración
+ * @param {string} assetCode - SPY, GOLD, BTC
+ * @param {string} assetName - Nombre legible
+ * @param {string} crossDirection - 'buy' (alcista) o 'sell' (bajista)
+ * @param {number} price - Precio actual
+ * @param {number} ema200 - EMA200 actual
+ */
+async function sendCrossAlerts(assetCode, assetName, crossDirection, price, ema200) {
+  try {
+    let users = [];
+    
+    if (assetCode === 'SPY') {
+      // S&P 500: enviar a TODOS los usuarios (sin filtro de alternative_alerts)
+      const result = await pool.query(
+        'SELECT * FROM users WHERE status = $1',
+        ['approved']
+      );
+      users = result.rows;
+    } else {
+      // Gold o Bitcoin: solo usuarios con alerta activada
+      const result = await pool.query(
+        `SELECT u.* FROM users u
+         INNER JOIN alternative_alerts aa ON u.id = aa.user_id
+         WHERE u.status = $1 AND aa.asset_code = $2 AND aa.enabled = true`,
+        ['approved', assetCode]
+      );
+      users = result.rows;
+    }
+    
+    if (users.length === 0) {
+      console.log(`   📭 No hay usuarios para notificar sobre ${assetName}`);
+      return;
+    }
+    
+    // Determinar plantilla de email
+    let template;
+    if (assetCode === 'SPY') {
+      template = 'sp500_sell'; // Solo bajista para S&P 500
+    } else if (crossDirection === 'buy') {
+      template = assetCode === 'GOLD' ? 'gold_buy' : 'btc_buy';
+    } else {
+      template = assetCode === 'GOLD' ? 'gold_sell' : 'btc_sell';
+    }
+    
+    // Enviar emails
+    for (const user of users) {
+      try {
+        await sendEmail({
+          to: user.email,
+          template: template,
+          data: {
+            name: user.name || 'Inversor',
+            assetName: assetName,
+            currentPrice: price.toFixed(2),
+            ema200: ema200.toFixed(2)
+          }
+        });
+        
+        await pool.query(
+          'INSERT INTO email_log (user_id, email_type, subject) VALUES ($1, $2, $3)',
+          [user.id, `${assetCode}_${crossDirection}`, `Alerta ${assetName} EMA200`]
+        );
+      } catch (emailErr) {
+        console.error(`   ❌ Error enviando alerta a ${user.email}:`, emailErr.message);
+      }
+    }
+    
+    console.log(`   ✉️  Enviadas ${users.length} alertas de ${assetName}`);
+    
+  } catch (error) {
+    console.error(`❌ Error enviando alertas de ${assetName}:`, error.message);
   }
 }
 

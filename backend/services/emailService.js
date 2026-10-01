@@ -55,6 +55,155 @@ const emailTemplates = {
     `
   },
   
+  sp500_sell: {
+    subject: '⚠️ Alerta de salida: S&P 500 cruza bajista la EMA200',
+    html: (data) => `
+      <h2>⚠️ Señal de salida detectada</h2>
+      <p>Hola ${data.name},</p>
+      <p>El S&P 500 acaba de cruzar <strong>por debajo</strong> de su EMA200 semanal.</p>
+      <p><strong>Precio actual:</strong> $${data.currentPrice}</p>
+      <p><strong>EMA200 semanal:</strong> $${data.ema200}</p>
+      
+      <p style="background-color: #fff3cd; padding: 15px; border-radius: 5px;">
+        <strong>Contexto:</strong> Este es un momento de prudencia. El mercado ha entrado en tendencia bajista según la EMA200. Es el momento de proteger capital moviendo posiciones del ${config.funds.crecimiento.name} al Fondo Monetario hasta que el mercado se recupere.
+      </p>
+      
+      <h3>¿Qué hacer?</h3>
+      <ol>
+        <li>Ve a tu cuenta de MyInvestor</li>
+        <li>En el <strong>${config.funds.crecimiento.name}</strong> (${config.funds.crecimiento.isin}), vende la parte que quieras proteger</li>
+        <li>Compra el <strong>Fondo Monetario</strong> (${config.funds.espera.isin}) para guardar esa "pólvora seca" hasta la próxima oportunidad de compra</li>
+      </ol>
+      
+      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
+        <strong>Recuerda:</strong> La disciplina es clave. No vendas por pánico, vende por estrategia. Te avisaremos cuando el mercado vuelva a tocar la EMA200 al alza para reinvertir.
+      </p>
+      
+      <p><a href="https://www.myinvestor.es" style="background-color: #003366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accede a MyInvestor</a></p>
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — EMA200 Strategy</p>
+    `
+  },
+  
+  gold_buy: {
+    subject: '🟡 Oportunidad: Gold cruza alcista la EMA200',
+    html: (data) => `
+      <h2>✅ Señal de entrada en Gold</h2>
+      <p>Hola ${data.name},</p>
+      <p>El <strong>WisdomTree Physical Gold</strong> (ISIN: JE00B8DFY052) acaba de cruzar <strong>por encima</strong> de su EMA200 semanal.</p>
+      <p><strong>Precio actual:</strong> $${data.currentPrice}</p>
+      <p><strong>EMA200 semanal:</strong> $${data.ema200}</p>
+      
+      <p style="background-color: #fffacd; padding: 15px; border-radius: 5px;">
+        <strong>Contexto:</strong> El oro ha entrado en tendencia alcista. Este activo suele funcionar como protección contra inflación y crisis. Puede ser un buen momento para considerar añadirlo a tu cartera.
+      </p>
+      
+      <h3>¿Qué hacer?</h3>
+      <p>Esta es solo una alerta informativa. Si decides invertir en oro:</p>
+      <ol>
+        <li>Ve a tu cuenta de MyInvestor o tu broker</li>
+        <li>Busca el ETF <strong>WisdomTree Physical Gold</strong> con ISIN: <strong>JE00B8DFY052</strong></li>
+        <li>Considera el tamaño de posición según tu estrategia personal</li>
+      </ol>
+      
+      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
+        <strong>Recuerda:</strong> Este activo es complementario a tu estrategia principal de S&P 500. No sustituye tu plan de jubilación, solo lo diversifica.
+      </p>
+      
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — Alertas Alternativas</p>
+    `
+  },
+  
+  gold_sell: {
+    subject: '🟡 Alerta: Gold cruza bajista la EMA200',
+    html: (data) => `
+      <h2>⚠️ Señal de salida en Gold</h2>
+      <p>Hola ${data.name},</p>
+      <p>El <strong>WisdomTree Physical Gold</strong> (ISIN: JE00B8DFY052) acaba de cruzar <strong>por debajo</strong> de su EMA200 semanal.</p>
+      <p><strong>Precio actual:</strong> $${data.currentPrice}</p>
+      <p><strong>EMA200 semanal:</strong> $${data.ema200}</p>
+      
+      <p style="background-color: #fff3cd; padding: 15px; border-radius: 5px;">
+        <strong>Contexto:</strong> El oro ha entrado en tendencia bajista según la EMA200. Puede ser momento de considerar reducir posiciones o salir temporalmente hasta que recupere la tendencia alcista.
+      </p>
+      
+      <h3>¿Qué hacer?</h3>
+      <p>Esta es solo una alerta informativa. Si tienes posiciones en oro, considera:</p>
+      <ol>
+        <li>Revisar tu exposición actual al oro</li>
+        <li>Evaluar si quieres mantener o reducir posiciones</li>
+        <li>Esperar a la próxima señal de entrada (cruce alcista) para reinvertir</li>
+      </ol>
+      
+      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
+        <strong>Recuerda:</strong> La disciplina de seguir la EMA200 también aplica a las salidas. Te avisaremos cuando el oro vuelva a cruzar al alza.
+      </p>
+      
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — Alertas Alternativas</p>
+    `
+  },
+  
+  btc_buy: {
+    subject: '₿ Oportunidad: Bitcoin ETP cruza alcista la EMA200',
+    html: (data) => `
+      <h2>✅ Señal de entrada en Bitcoin ETP</h2>
+      <p>Hola ${data.name},</p>
+      <p>El <strong>iShares Bitcoin ETP</strong> (ISIN: XS2940466316) acaba de cruzar <strong>por encima</strong> de su EMA200 semanal.</p>
+      <p><strong>Precio actual:</strong> $${data.currentPrice}</p>
+      <p><strong>EMA200 semanal:</strong> $${data.ema200}</p>
+      
+      <p style="background-color: #fffacd; padding: 15px; border-radius: 5px;">
+        <strong>Contexto:</strong> Bitcoin ha entrado en tendencia alcista. Este ETP ofrece exposición regulada a Bitcoin sin necesidad de gestionar wallets. Recuerda que es un activo de alta volatilidad.
+      </p>
+      
+      <h3>¿Qué hacer?</h3>
+      <p>Esta es solo una alerta informativa. Si decides invertir en Bitcoin:</p>
+      <ol>
+        <li>Ve a tu cuenta de MyInvestor o tu broker</li>
+        <li>Busca el ETP <strong>iShares Bitcoin ETP</strong> con ISIN: <strong>XS2940466316</strong></li>
+        <li>Considera el tamaño de posición adecuado para tu perfil de riesgo</li>
+      </ol>
+      
+      <p style="background-color: #fff3cd; padding: 15px; border-radius: 5px;">
+        <strong>⚠️ Importante:</strong> Bitcoin es un activo de muy alta volatilidad. Solo invierte capital que puedas permitirte perder. No debe representar más de un pequeño porcentaje de tu cartera.
+      </p>
+      
+      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
+        <strong>Recuerda:</strong> Este activo es complementario a tu estrategia principal de S&P 500. No sustituye tu plan de jubilación, solo lo diversifica.
+      </p>
+      
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — Alertas Alternativas</p>
+    `
+  },
+  
+  btc_sell: {
+    subject: '₿ Alerta: Bitcoin ETP cruza bajista la EMA200',
+    html: (data) => `
+      <h2>⚠️ Señal de salida en Bitcoin ETP</h2>
+      <p>Hola ${data.name},</p>
+      <p>El <strong>iShares Bitcoin ETP</strong> (ISIN: XS2940466316) acaba de cruzar <strong>por debajo</strong> de su EMA200 semanal.</p>
+      <p><strong>Precio actual:</strong> $${data.currentPrice}</p>
+      <p><strong>EMA200 semanal:</strong> $${data.ema200}</p>
+      
+      <p style="background-color: #fff3cd; padding: 15px; border-radius: 5px;">
+        <strong>Contexto:</strong> Bitcoin ha entrado en tendencia bajista según la EMA200. Dada su alta volatilidad, puede ser momento de proteger capital reduciendo o cerrando posiciones temporalmente.
+      </p>
+      
+      <h3>¿Qué hacer?</h3>
+      <p>Esta es solo una alerta informativa. Si tienes posiciones en Bitcoin ETP, considera:</p>
+      <ol>
+        <li>Revisar tu exposición actual a Bitcoin</li>
+        <li>Evaluar si quieres mantener, reducir o salir completamente</li>
+        <li>Esperar a la próxima señal de entrada (cruce alcista) para reinvertir</li>
+      </ol>
+      
+      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
+        <strong>Recuerda:</strong> La disciplina de seguir la EMA200 también aplica a las salidas. Las correcciones de Bitcoin pueden ser severas. Te avisaremos cuando vuelva a cruzar al alza.
+      </p>
+      
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — Alertas Alternativas</p>
+    `
+  },
+  
   rotation_active: {
     subject: (data) => `Es momento de proteger lo que has construido — Tramo ${data.rotationYear} de 5`,
     html: (data) => `
