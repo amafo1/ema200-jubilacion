@@ -36,9 +36,13 @@ async function dailyEMA200Check() {
   
   try {
     // Monitorear los 3 activos
-    await checkAssetEMA200('SPY', 'SPY', 'S&P 500', 'bearish'); // Solo bajista
-    await checkAssetEMA200('XAU/USD', 'GOLD', 'Gold', 'both'); // Ambos cruces
-    await checkAssetEMA200('BTC/USD', 'BTC', 'Bitcoin', 'both'); // Ambos cruces
+    // S&P 500: solo nos interesa el cruce BAJISTA, porque para esta estrategia
+    // el precio por debajo de la EMA200 es una SEÑAL DE COMPRA (comprar barato
+    // con la pólvora seca del Monetario). No hay alerta de venta para el S&P 500.
+    await checkAssetEMA200('SPY', 'SPY', 'S&P 500', 'bearish');
+    // Oro y Bitcoin: alertas en ambos cruces (entrada al alza y salida a la baja).
+    await checkAssetEMA200('XAU/USD', 'GOLD', 'Gold', 'both');
+    await checkAssetEMA200('BTC/USD', 'BTC', 'Bitcoin', 'both');
     
     // Si el S&P 500 se ha recuperado, intentar completar rotaciones pausadas
     const latestSPY = await pool.query(
@@ -179,7 +183,11 @@ async function sendCrossAlerts(assetCode, assetName, crossDirection, price, ema2
     // Determinar plantilla de email
     let template;
     if (assetCode === 'SPY') {
-      template = 'sp500_sell'; // Solo bajista para S&P 500
+      // ESTRATEGIA S&P 500: el cruce BAJISTA (precio por debajo de la EMA200) NO es
+      // una señal de venta, sino una SEÑAL DE COMPRA 🎯. Es el momento de usar la
+      // "pólvora seca" del Fondo Monetario para comprar barato. Por eso el único
+      // aviso del S&P 500 usa la plantilla 'buy_signal'.
+      template = 'buy_signal';
     } else if (crossDirection === 'buy') {
       template = assetCode === 'GOLD' ? 'gold_buy' : 'btc_buy';
     } else {
@@ -200,9 +208,12 @@ async function sendCrossAlerts(assetCode, assetName, crossDirection, price, ema2
           }
         });
         
+        // Para el S&P 500 el cruce bajista es una señal de compra, así que lo
+        // registramos como 'buy_signal' para que el historial sea coherente.
+        const emailType = assetCode === 'SPY' ? 'buy_signal' : `${assetCode}_${crossDirection}`;
         await pool.query(
           'INSERT INTO email_log (user_id, email_type, subject) VALUES ($1, $2, $3)',
-          [user.id, `${assetCode}_${crossDirection}`, `Alerta ${assetName} EMA200`]
+          [user.id, emailType, `Alerta ${assetName} EMA200`]
         );
       } catch (emailErr) {
         console.error(`   ❌ Error enviando alerta a ${user.email}:`, emailErr.message);
@@ -309,9 +320,11 @@ async function checkRotationAnniversary() {
  */
 async function processRotationTranche(user, rotationYear, existingId) {
   try {
-    // Estado de mercado más reciente
+    // Estado de mercado más reciente DEL S&P 500. La rotación a dividendos se
+    // decide SIEMPRE según el S&P 500 (asset_code = 'SPY'), nunca según el Oro
+    // ni el Bitcoin, aunque la tabla ema200_history también guarde sus lecturas.
     const latestEMA = await pool.query(
-      'SELECT * FROM ema200_history ORDER BY date DESC, id DESC LIMIT 1'
+      "SELECT * FROM ema200_history WHERE asset_code = 'SPY' ORDER BY date DESC, id DESC LIMIT 1"
     );
     
     // Sin datos de mercado todavía: crear el tramo como pendiente y esperar

@@ -55,35 +55,6 @@ const emailTemplates = {
     `
   },
   
-  sp500_sell: {
-    subject: '⚠️ Alerta de salida: S&P 500 cruza bajista la EMA200',
-    html: (data) => `
-      <h2>⚠️ Señal de salida detectada</h2>
-      <p>Hola ${data.name},</p>
-      <p>El S&P 500 acaba de cruzar <strong>por debajo</strong> de su EMA200 semanal.</p>
-      <p><strong>Precio actual:</strong> $${data.currentPrice}</p>
-      <p><strong>EMA200 semanal:</strong> $${data.ema200}</p>
-      
-      <p style="background-color: #fff3cd; padding: 15px; border-radius: 5px;">
-        <strong>Contexto:</strong> Este es un momento de prudencia. El mercado ha entrado en tendencia bajista según la EMA200. Es el momento de proteger capital moviendo posiciones del ${config.funds.crecimiento.name} al Fondo Monetario hasta que el mercado se recupere.
-      </p>
-      
-      <h3>¿Qué hacer?</h3>
-      <ol>
-        <li>Ve a tu cuenta de MyInvestor</li>
-        <li>En el <strong>${config.funds.crecimiento.name}</strong> (${config.funds.crecimiento.isin}), vende la parte que quieras proteger</li>
-        <li>Compra el <strong>Fondo Monetario</strong> (${config.funds.espera.isin}) para guardar esa "pólvora seca" hasta la próxima oportunidad de compra</li>
-      </ol>
-      
-      <p style="background-color: #eef6ff; padding: 15px; border-radius: 5px;">
-        <strong>Recuerda:</strong> La disciplina es clave. No vendas por pánico, vende por estrategia. Te avisaremos cuando el mercado vuelva a tocar la EMA200 al alza para reinvertir.
-      </p>
-      
-      <p><a href="https://www.myinvestor.es" style="background-color: #003366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accede a MyInvestor</a></p>
-      <p style="color: #666; font-size: 12px; margin-top: 30px;">Tu jubilación automática — EMA200 Strategy</p>
-    `
-  },
-  
   gold_buy: {
     subject: '🟡 Oportunidad: Gold cruza alcista la EMA200',
     html: (data) => `
