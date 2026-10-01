@@ -48,11 +48,25 @@ CREATE TABLE IF NOT EXISTS rotation_history (
   UNIQUE(user_id, rotation_year)
 );
 
+-- Tabla de alertas de activos alternativos (Gold / Bitcoin)
+-- Cada fila representa el estado del toggle de alertas EMA200 de un usuario
+-- para un activo concreto. Si no existe fila, se considera desactivado.
+CREATE TABLE IF NOT EXISTS alternative_alerts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  asset_code VARCHAR(20) NOT NULL, -- 'GOLD' | 'BTC'
+  enabled BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, asset_code)
+);
+
 -- Índices para optimizar queries
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 CREATE INDEX IF NOT EXISTS idx_ema200_date ON ema200_history(date);
 CREATE INDEX IF NOT EXISTS idx_email_log_user ON email_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_alt_alerts_user ON alternative_alerts(user_id);
 `;
 
 // Migraciones idempotentes para bases de datos que ya existían antes de

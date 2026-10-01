@@ -10,6 +10,7 @@ import Alerts from './pages/Alerts';
 import Invest from './pages/Invest';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Alternatives from './pages/Alternatives';
 import AdminPanel from './pages/AdminPanel';
 
 // Protected Route Component
@@ -37,6 +38,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/alternatives"
+          element={
+            <ProtectedRoute>
+              <Alternatives />
             </ProtectedRoute>
           }
         />

@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
 const fundRoutes = require('./routes/funds');
+const alternativeRoutes = require('./routes/alternatives');
 const { initializeCronJobs } = require('./jobs/cronJobs');
 const { initSchema } = require('./db/schema');
 
@@ -43,6 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/funds', fundRoutes);
+app.use('/api/alternatives', alternativeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

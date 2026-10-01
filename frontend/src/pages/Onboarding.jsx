@@ -31,34 +31,27 @@ export default function Onboarding() {
     const retirementDate = new Date(birth.getFullYear() + 67, birth.getMonth(), birth.getDate());
     const yearsUntilRetirement = (retirementDate - today) / (1000 * 60 * 60 * 24 * 365.25);
     
-    if (yearsUntilRetirement > 15) {
+    if (yearsUntilRetirement > 25) {
       return {
         yearsLeft: Math.floor(yearsUntilRetirement),
         message: 'Momento ideal. Estrategia completa.',
-        description: 'Tienes más de 15 años. Podrás completar varios ciclos de inversión antes de jubilarte.',
+        description: 'Tienes más de 25 años. Podrás completar varios ciclos de inversión antes de jubilarte.',
         blocked: false
       };
-    } else if (yearsUntilRetirement > 10) {
+    } else if (yearsUntilRetirement >= 15) {
       return {
         yearsLeft: Math.floor(yearsUntilRetirement),
-        message: 'Buen momento. Tendrás 2-3 ciclos completos.',
-        description: 'La estrategia te permitirá participar en múltiples oportunidades de compra y venta.',
-        blocked: false
-      };
-    } else if (yearsUntilRetirement >= 7) {
-      return {
-        yearsLeft: Math.floor(yearsUntilRetirement),
-        message: 'Estrategia viable pero la rotación a dividendos empezará pronto.',
-        description: 'Aún tienes tiempo, pero comenzarás a proteger tu patrimonio en los próximos años.',
+        message: 'Buen momento. Horizonte suficiente para la estrategia completa.',
+        description: 'Tu horizonte permite los ~10 años de acumulación y los 5 años de rotación a dividendos antes de jubilarte.',
         blocked: false
       };
     }
     
-    // Menos de 7 años hasta la jubilación: la plataforma no es adecuada.
+    // Menos de 15 años hasta la jubilación: la plataforma no es adecuada.
     return {
       yearsLeft: Math.max(0, Math.floor(yearsUntilRetirement)),
       message: 'Esta plataforma no es adecuada para tu horizonte de inversión.',
-      description: 'Esta plataforma está diseñada para horizontes de inversión de 7 años o más. Te recomendamos invertir directamente en el fondo de dividendos o consultar con un asesor financiero.',
+      description: 'Esta plataforma está diseñada para horizontes de inversión de 15 años o más (aproximadamente 10 años de acumulación + 5 años de rotación a dividendos). Te recomendamos invertir directamente en el fondo de dividendos o consultar con un asesor financiero.',
       blocked: true
     };
   };
@@ -118,7 +111,7 @@ export default function Onboarding() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Bloqueo total si el horizonte es menor a 7 años.
+    // Bloqueo total si el horizonte es menor a 15 años.
     if (recommendation?.blocked) return;
     
     if (!validate()) return;
@@ -194,16 +187,15 @@ export default function Onboarding() {
             {/* Recomendación automática */}
             {recommendation && !recommendation.blocked && (
               <div className={`mt-4 p-4 rounded-lg ${
-                recommendation.yearsLeft > 15 ? 'bg-green-50 border border-green-200' :
-                recommendation.yearsLeft > 10 ? 'bg-blue-50 border border-blue-200' :
-                'bg-yellow-50 border border-yellow-200'
+                recommendation.yearsLeft > 25 ? 'bg-green-50 border border-green-200' :
+                'bg-blue-50 border border-blue-200'
               }`}>
                 <p className="font-semibold text-gray-800">{recommendation.message}</p>
                 <p className="text-sm text-gray-600 mt-1">{recommendation.description}</p>
               </div>
             )}
 
-            {/* Bloqueo: menos de 7 años hasta la jubilación */}
+            {/* Bloqueo: menos de 15 años hasta la jubilación */}
             {recommendation && recommendation.blocked && (
               <div className="mt-4 rounded-lg border-2 border-amber-400 bg-amber-50 p-4">
                 <div className="flex items-start gap-3">

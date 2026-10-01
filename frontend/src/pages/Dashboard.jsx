@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { userAPI, fundAPI, adminAPI } from '../services/api';
+import AlternativesSection from '../components/AlternativesSection';
 
 // Años hasta la jubilación (a los 67) con precisión completa, replicando el backend
 // para que las estimaciones coincidan al céntimo con la simulación del servidor.
@@ -230,7 +231,7 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
-          {['overview', 'funds', 'history', ...(isAdmin ? ['admin'] : []), 'settings'].map((tab) => (
+          {['overview', 'funds', 'alternatives', 'history', ...(isAdmin ? ['admin'] : []), 'settings'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -242,6 +243,7 @@ export default function Dashboard() {
             >
               {tab === 'overview' && '📊 Resumen'}
               {tab === 'funds' && '💰 Mis fondos'}
+              {tab === 'alternatives' && '🪙 Alternativas'}
               {tab === 'history' && '📈 Historial EMA'}
               {tab === 'admin' && `👥 Administración${adminUsers.length ? ` (${adminUsers.length})` : ''}`}
               {tab === 'settings' && '⚙️ Configuración'}
@@ -440,6 +442,11 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        )}
+        
+        {/* Alternatives Tab */}
+        {activeTab === 'alternatives' && (
+          <AlternativesSection />
         )}
         
         {/* EMA History Tab */}
