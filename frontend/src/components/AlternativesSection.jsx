@@ -174,11 +174,6 @@ export default function AlternativesSection() {
           );
         })}
       </div>
-
-      <p className="text-xs text-gray-400 leading-relaxed">
-        El seguimiento automático del cruce de la EMA200 para estos activos se activará próximamente. De
-        momento puedes dejar configuradas tus preferencias de alerta.
-      </p>
     </div>
   );
 }
